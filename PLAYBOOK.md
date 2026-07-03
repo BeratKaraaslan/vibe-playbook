@@ -183,7 +183,7 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 ## 10. Session hijyeni & devir
 
 - **Tetik = kalite + doğal sınır, sabit token sayısı DEĞİL.** Taze session, compaction geçirmiş session'dan daha kalitelidir — devir bunun için yapılır. Context bütçesi modele göre değişir (200k vs 1M); **teknik kapasite varken tutarlı bir birimi aynı session'da BİTİRMEK serbesttir** — yarım işi devretmek çoğu zaman daha pahalıdır. Doğal sınırda öneri: *"Bu birim bitti / kalite düşmeye başladı. Yeni session öneriyorum; docs güncel. Onaylıyor musun?"*
-- **Emniyet ağı (zorlayıcı değil):** model kendi kalan context'ini içgözlemle BİLEMEZ — "agent doluluğu fark etsin" güvenilmezdir. Bunun yerine **PreCompact hook**: compaction tetiklenmeden önce koşar → devir-durumunun living-docs'a yazılmasını güvenceler + kullanıcıya haber verir. **Devir dayatmaz** — compaction sonrası aynı session'da devam edilebilir; sadece kalıcı durum önceden yazılmış olur. *(İsteğe bağlı: statusline'da context% — insan takibini kolaylaştırır.)*
+- **Emniyet ağı (OPSİYONEL, zorlayıcı değil):** model kendi kalan context'ini içgözlemle BİLEMEZ — "agent doluluğu fark etsin" güvenilmezdir; güvenilir takip insan + harness'tadır. İsteyen proje **PreCompact hook** kurar (**proje başında, isteğe göre** — varsayılan kurulum listesinde değil): compaction tetiklenmeden önce koşar → devir-durumunun living-docs'a yazılmasını güvenceler + kullanıcıya haber verir. **Devir dayatmaz** — compaction sonrası aynı session'da devam edilebilir. Hook kurulmayan projede aynı hijyen insan takibiyle yürür *(statusline'da context% yardımcı)*.
 - **Devir kanalları:** çalışan/ops → **durum raporu** + güncel living-docs. Yönetici → **devir-prompt** + memory + living-docs (yeni yönetici otomatik yükler).
 - İdeal granülerlik: parça-başına bir session; büyük parçada alt-adım başına.
 
@@ -204,7 +204,7 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 │                      #   deny (.env oku/yaz, rm -rf, force-push, curl…)
 ├─ hooks/
 │  ├─ guard-env.sh     # PreToolUse: secret dosya erişimini fiziksel engelle
-│  └─ pre-compact.sh   # PreCompact: compaction öncesi devir-durumu → living-docs + bildirim (§10)
+│  └─ pre-compact.sh   # (OPSİYONEL — proje başında isteğe göre) PreCompact: devir-durumu → living-docs (§10)
 ├─ agents/             # spec-writer · test-writer · code-reviewer/verifier (KAPI 4, §4.3) ·
 │                      #   design-system-guardian · <domain>-expert (opsiyonel)
 └─ commands/           # /spec · /plan · /checkpoint · /review · /new-part
@@ -238,7 +238,7 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 │  ├─ archive/{changelog.md, phase-N-summary.md}
 │  ├─ ops/<runbook>.md                 # Ops session runbook'ları + neden-kararları
 │  └─ design/{STATUS.md, design-system-notes.md, <G-iş>/brief.md}   # opsiyonel
-└─ .claude/{settings.json, hooks/{guard-env.sh, pre-compact.sh}, agents/*, commands/*}
+└─ .claude/{settings.json, hooks/{guard-env.sh, pre-compact.sh(ops.)}, agents/*, commands/*}
 + memory/manager-session-pattern.md    # yönetici davranışı (devirde otomatik)
 ```
 
