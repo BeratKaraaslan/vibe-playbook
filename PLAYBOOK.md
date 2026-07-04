@@ -4,7 +4,8 @@
 > Domain-nötr: her yeni projede kopyalanır, Faz 0'da projeye özelleşir.
 > **Üç birinci-sınıf hedef:** tutarlılık · sürdürülebilirlik · bağlamın (context) korunması.
 >
-> **Sürüm: v2** (2026-07-03) · kanonik ev = bu repo, kopyalar türevdir (§15) · değişiklikler → [CHANGELOG.md](CHANGELOG.md)
+> **Sürüm: v3** (2026-07-04) · kanonik ev = bu repo, kopyalar türevdir (§15) · değişiklikler → [CHANGELOG.md](CHANGELOG.md)
+> **v3 ile:** iskelet artık prose değil — [`template/`](template/) gerçek dosyalar; yeni proje = kopyala + `template/STARTGUIDE.md` (§14).
 
 ---
 
@@ -27,6 +28,8 @@ Geliştirme **vibe coding** olarak akar (AI küçük adımlarla ilerler, insan y
 
 > **Yönetici "kod yazmaz" ≠ boş durur.** Yönetici dokümanların ve sürecin sahibidir: living-docs günceller, kickoff üretir, kararı sabitler, kapıyı denetler.
 
+> **Tasarım karar vericisi = Claude Design** (Claude Code'a **MCP** ile bağlanır). Bu bağlantı için Claude Code'un **terminalden (CLI) kullanımı ZORUNLUDUR** — ④ Tasarım (G) işleri terminal oturumunda yürütülür.
+
 ### Neden Ops session AYRI — ve "kalıcı"nın gerçek anlamı
 Manuel/altyapı işini yönetici veya geliştirme session'ında yapmak: (a) o session'ın context'ini operasyon gürültüsüyle **doldurur**, (b) geliştirme takibini **kirletir**. Bu yüzden AYRI.
 
@@ -47,14 +50,21 @@ Her geliştirme parçası bu döngüden geçer:
 SPEC yaz              → 🚦 KAPI 1: spec onayı (kod yok — yanlış yönü en ucuz yerde durdurur)
 PLAN (plan mode)      → 🚦 KAPI 2: plan onayı
 IMPL                  → agent akar (vibe); parça branch'inde küçük CHECKPOINT commit'leri (§9)
-TEST (agent+koştur)   → 🚦 KAPI 3: testleri gör + tarayıcıda/gerçekte dene
+TEST (/gate3 kanıtı)  → 🚦 KAPI 3: mekanik kanıt bloğu (test/lint/typecheck) + tarayıcıda/gerçekte dene
 KRİTİK REVIEW         → 🚦 KAPI 4: verifier-subagent + yönetici derin okur (§4.3);
                          İNSAN bulgu raporunu okur + kritik diff'lere nokta atışı bakar; ONAY İNSANINDIR
-MERGE + docs          → main'e giriş YALNIZ burada → checkpoint → yeni session
+MERGE + docs          → main'e giriş YALNIZ burada (main-guard hook enforce eder — §12) → checkpoint → yeni session
 ```
 
 - **KAPI 4 profili track'e göre değişir:** kod-track (para/auth) = ağır (yukarıdaki tam akış); tasarım-track = hafif (para yok, güvenlik-yüzeyi kadar); ops = "birlikte doğrula" (§6).
+- **Kapı-profili parça bazında da esner (kapı-yorgunluğuna baştan önlem):** küçük/düşük-riskli parçada yönetici **KAPI 1+2'yi tek onayda birleştirir** (spec+plan birlikte sunulur); para/auth/veri-kaybı yüzeyinde ASLA birleşmez. Profil, spec'in `kapı-profili` alanına yazılır (module-specs şablonu). *(§15 retro-kalibrasyonu yine geçerli — bu, öngörülebilir kısmın baştan çözümüdür.)*
 - **Faz kapıları** (parça kapılarının üstünde): Faz 0 plan onayı (en büyük) · omurga bitince · her büyük parça bitince.
+
+### 2.1 Mutlu-yol dışı (iptal / geri-dönüş — branch modeli sayesinde ucuz)
+
+- **Parça iptali:** branch terk edilir (silme = yıkıcı → önce sor) · issues/changelog'a tek satır gerekçe · spec'e `İPTAL` işareti · progress güncellenir.
+- **IMPL ortasında plan çürüdü:** sıfırdan başlanmaz — KAPI 2'ye **delta-plan** ile dönülür (ne değişti + neden), onayla devam edilir.
+- **KAPI 4 spec-seviyesi kusur buldu:** düzeltme yaması değil geri-dönüş — KAPI 1'e dönülür, spec düzeltilir; ders retro'ya not düşülür (§15).
 
 ---
 
@@ -173,8 +183,9 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 
 - **Commit disiplini (branch + checkpoint):** parça kendi branch'inde akar (`wip/P-N`, `feat/…` — main'de doğrudan iş YOK). Küçük **checkpoint commit'leri serbest ve teşviklidir** — kayıp penceresi (crash · yanlış tool çağrısı · kas-hafızası refleksi) hiç açılmaz. **Değişmez kural: main'e KAPI 4'süz hiçbir şey girmez.** Review diff'i tek komut: `git diff main...<branch>`. İstenirse KAPI 4 sonrası history squash/curate edilir (yalnız o branch'te, önceden izinli).
 - **Git güvenliği:** uncommitted iş varken **`git restore/stash/clean/checkout --` ASLA**; yıkıcı işlem (force/reset/branch-sil) için önce sor. *(Checkpoint disiplini bu riski zaten küçültür.)*
-- **Hook > talimat:** enforce edilebilen hijyen kuralı modele talimatla değil **harness hook'uyla** uygulanır (guard-env = secret · PreCompact = devir-durumu). Talimat unutulur/atlanır; hook unutmaz.
+- **Hook > talimat:** enforce edilebilen hijyen kuralı modele talimatla değil **harness hook'uyla** uygulanır (guard-env = secret · **main-guard = main'de kod-commit + KAPI4-işaretsiz merge bloğu** · PreCompact = devir-durumu). Talimat unutulur/atlanır; hook unutmaz. Genel ilke: **enforce edilebilen invariant hook'a, otomatikleştirilebilen kanıt script'e** (/gate3) — insan dikkati yalnız gerçek muhakemeye.
 - **Secret hijyeni:** `.env` okunmaz/yazdırılmaz (**PreToolUse guard hook** enforce eder); koda gömülmez.
+- **Anti-confabulation (genel):** §1'deki kural yalnız Ops'un değildir — compaction geçirmiş **her** session için geçerli: "neden X?" cevabı docs'tan verilir; docs'ta yoksa **"kayıtlı değil"** — uydurulmaz.
 - **Test:** dış-servis/LLM çağrıları **mock-first** (deterministik + ücretsiz); gerçek çağrı yalnız kontrollü ölçüm script'i.
 - **Ortam kuralları:** projeye özel footgun'lar (portlar, sürüm pinleri, "şu komut şu path'te") — spec/memory'de.
 
@@ -184,14 +195,16 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 
 - **Tetik = kalite + doğal sınır, sabit token sayısı DEĞİL.** Taze session, compaction geçirmiş session'dan daha kalitelidir — devir bunun için yapılır. Context bütçesi modele göre değişir (200k vs 1M); **teknik kapasite varken tutarlı bir birimi aynı session'da BİTİRMEK serbesttir** — yarım işi devretmek çoğu zaman daha pahalıdır. Doğal sınırda öneri: *"Bu birim bitti / kalite düşmeye başladı. Yeni session öneriyorum; docs güncel. Onaylıyor musun?"*
 - **Emniyet ağı (OPSİYONEL, zorlayıcı değil):** model kendi kalan context'ini içgözlemle BİLEMEZ — "agent doluluğu fark etsin" güvenilmezdir; güvenilir takip insan + harness'tadır. İsteyen proje **PreCompact hook** kurar (**proje başında, isteğe göre** — varsayılan kurulum listesinde değil): compaction tetiklenmeden önce koşar → devir-durumunun living-docs'a yazılmasını güvenceler + kullanıcıya haber verir. **Devir dayatmaz** — compaction sonrası aynı session'da devam edilebilir. Hook kurulmayan projede aynı hijyen insan takibiyle yürür *(statusline'da context% yardımcı)*.
-- **Devir kanalları:** çalışan/ops → **durum raporu** + güncel living-docs. Yönetici → **devir-prompt** + memory + living-docs (yeni yönetici otomatik yükler).
+- **Devir kanalları:** çalışan/ops → **durum raporu** + güncel living-docs. Yönetici → **devir-prompt** + memory + living-docs.
+- **Devir-testi (Ops testinin yönetici simetriği):** devir-prompt'ta living-docs'ta olmayan bilgi varsa bu, prompt'un zenginliği değil **docs'un açığıdır** — prompt değil doc düzeltilir. Devir-prompt kaynağa değil konfora hizmet eder; kaynak her zaman living-docs'tur.
 - İdeal granülerlik: parça-başına bir session; büyük parçada alt-adım başına.
 
 ---
 
 ## 11. Memory (davranış kalıcılığı)
 
-- **`manager-session-pattern`** (memory): yönetici rolünün çalışma şekli — kickoff iskeleti, zemin-doğrulama, kapı-onay disiplini, çalışma anlaşmaları, devir kuralı. Yeni yönetici session **otomatik yükler** → akış kesintisiz.
+- **`manager-session-pattern`** (memory): yönetici rolünün çalışma şekli — kickoff iskeleti, zemin-doğrulama, kapı-onay disiplini, çalışma anlaşmaları, devir kuralı. İlk yönetici session içeriği `memory-seed/`den kaydeder (STARTGUIDE); sonraki yönetici session'lara kesintisiz taşınır.
+- **Mekanizma-notu (beklentiyi doğru kur):** memory **proje-dizinine bağlı ve rol-körüdür** — projedeki *her* session aynı index'i görür; "yönetici yükler" bir seçicilik değil, içeriğin yönetici-davranışı olmasındandır. Rol seçiciliği memory'yle değil **kickoff'la** sağlanır.
 - Memory = repo'nun kaydetMEDİĞİ **davranış/tercih** bilgisi. Proje durumu repo'da; davranış memory'de. İkisi çakışmaz.
 
 ---
@@ -200,14 +213,16 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 
 ```
 .claude/
-├─ settings.json       # permissions: allow (güvenli read/build/test) · ask (commit/push/deploy) ·
-│                      #   deny (.env oku/yaz, rm -rf, force-push, curl…)
+├─ settings.json       # permissions: allow (güvenli read/build/test) · ask (commit/merge/push/checkout…) ·
+│                      #   deny (.env oku, rm -rf, force-push, git clean) + hook kayıtları
 ├─ hooks/
-│  ├─ guard-env.sh     # PreToolUse: secret dosya erişimini fiziksel engelle
-│  └─ pre-compact.sh   # (OPSİYONEL — proje başında isteğe göre) PreCompact: devir-durumu → living-docs (§10)
-├─ agents/             # spec-writer · test-writer · code-reviewer/verifier (KAPI 4, §4.3) ·
-│                      #   design-system-guardian · <domain>-expert (opsiyonel)
-└─ commands/           # /spec · /plan · /checkpoint · /review · /new-part
+│  ├─ guard-env.sh     # PreToolUse: secret dosya (.env*) erişimini fiziksel engelle (.env.example serbest)
+│  ├─ main-guard.sh    # PreToolUse(Bash): main'de KOD commit'i + KAPI4-işaretsiz merge'i fiziksel blokla
+│  │                   #   (docs-only commit main'de serbest · işaret: insan onayı → .claude/.gate4-ok)
+│  └─ pre-compact.sh   # (OPSİYONEL — proje başında isteğe göre) PreCompact: zemin fotoğrafı + bildirim (§10)
+├─ agents/             # verifier (KAPI 4, §4.3) — ASGARİ set; spec-writer/test-writer/design-guardian
+│                      #   ancak yük taşıdığı kanıtlanırsa eklenir (her agent taşınan bakım yüküdür)
+└─ commands/           # /spec · /plan · /checkpoint · /gate3 (KAPI 3 mekanik kanıt) · /review · /new-part
 ```
 
 ---
@@ -217,29 +232,32 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 | Track | Numara | Ağır kapı | Not |
 |---|---|---|---|
 | **Kod** | P1, P2… | KAPI 4 (para/auth) | branch + checkpoint commit (§9); main'e KAPI 4'süz giriş YOK |
-| **Tasarım** | G1, G2… | KAPI 3 (görsel/tarayıcı) | guardian guardrail; docs/design/ + STATUS |
+| **Tasarım** | G1, G2… | KAPI 3 (görsel/tarayıcı) | karar verici: **Claude Design** (MCP; Claude Code **terminal zorunlu**) · guardian guardrail; docs/design/ + STATUS |
 | **Ops** | (ad-hoc) | "birlikte doğrula" | kalıcı(cache) session; infra-state + runbook |
 
 ---
 
 ## 14. Base-project iskeleti (kopyala-kullan)
 
+> **v3'ten itibaren bu iskelet [`template/`](template/) olarak MATERIALIZE edilmiştir** — yeni proje = `template/` içeriğini kopyala + [`STARTGUIDE.md`](template/STARTGUIDE.md)'yi izle. Gerekçe: prose'dan her bootstrap bir yeniden-yorumlamaydı ve drift daha doğumda başlıyordu; gerçek dosyalar tek doğruluktur, iskelet değişiklikleri de sürümlenir (§15). `workflow.md` playbook'un **normatif özetidir** (yalnız kural; gerekçeler burada kalır) — bu sayede playbook yeniden yapılandırılmadan çekirdek/rationale ayrımı kendiliğinden oluşur.
+
 ```
-<repo>/
-├─ STARTGUIDE.md          # insan: manuel setup + Faz 0 kickoff komutu
-├─ workflow.md            # bu playbook'un projeye inmiş hâli (başına: "← playbook vN")
-├─ CLAUDE.md              # LEAN: doküman haritası + kritik kurallar (otomatik yüklenir)
+template/  →  <yeni-repo>/
+├─ STARTGUIDE.md          # insan: kurulum adımları + Faz 0 kickoff komutu + opsiyon anahtarları
+├─ workflow.md            # playbook'un NORMATİF özeti (başında: "← playbook vN"; sonunda "Proje sapmaları")
+├─ CLAUDE.md              # LEAN: doküman haritası + 8 kritik kural (otomatik yüklenir)
 ├─ progress.md · issues.md            # state panoları (boş başlar; session başı yüklenir)
-├─ open-questions.md · NEEDS-FROM-USER.md · .env.example
+├─ open-questions.md · NEEDS-FROM-USER.md · .env.example · .gitignore
 ├─ PRD.md · architecture.md · data-model.md      # plan-track (Faz 0'da dolar)
 ├─ infra-state.md         # Ops session panosu (altyapı gerçeği)
-├─ module-specs/_TEMPLATE.md · phase-kickoffs.md
+├─ module-specs/_TEMPLATE.md          # spec şablonu (kapı-profili alanı dahil — §2)
+├─ phase-kickoffs.md
 ├─ docs/
-│  ├─ archive/{changelog.md, phase-N-summary.md}
-│  ├─ ops/<runbook>.md                 # Ops session runbook'ları + neden-kararları
-│  └─ design/{STATUS.md, design-system-notes.md, <G-iş>/brief.md}   # opsiyonel
-└─ .claude/{settings.json, hooks/{guard-env.sh, pre-compact.sh(ops.)}, agents/*, commands/*}
-+ memory/manager-session-pattern.md    # yönetici davranışı (devirde otomatik)
+│  ├─ archive/changelog.md            # + faz sonlarında phase-N-summary.md
+│  ├─ ops/_TEMPLATE-runbook.md        # adımlar + neden-kararları bölümü (anti-confabulation kaynağı)
+│  └─ design/{STATUS.md, design-system-notes.md}   # opsiyonel (kullanılmıyorsa silinir)
+├─ .claude/               # §12'deki yapı — hook'lar test edilmiş çalışır dosyalar
+└─ memory-seed/manager-session-pattern.md   # ilk yönetici session memory'sine kaydeder (STARTGUIDE §3)
 ```
 
 **Genelleştirme:** projeye özel her şeyi (domain, stack, iş kuralları) Faz 0'da doldur. **Domain-bağımsız çekirdek:** 4 session tipi · insan kapıları · track'ler · living-docs lifecycle · el-ele · kickoff iskeleti · çalışma anlaşmaları · memory.
