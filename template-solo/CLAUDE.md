@@ -1,6 +1,6 @@
 # <PROJECT NAME> — CLAUDE.md
 
-> Keep LEAN (~50 lines): doc map + critical rules. Process details: [workflow.md](workflow.md).
+> Keep LEAN: doc map + critical rules. Process details: [workflow.md](workflow.md). **Mode: SOLO** (one session + subagents).
 
 ## Project
 
@@ -10,8 +10,8 @@
 
 ## Doc map (what loads when)
 
-- `progress.md` + `issues.md` → at the start of every session
-- `module-specs/<part>.md` → while working on that part (**single source of truth**)
+- `progress.md` + `issues.md` → at session start and right after `/clear`
+- `module-specs/<part>.md` → the active part (**single source of truth**)
 - `architecture.md` / `data-model.md` → when relevant
 - `infra-state.md` → ops/deploy work
 - `workflow.md` → process questions
@@ -28,5 +28,7 @@
 7. **Tests:** external-service/LLM calls are **mock-first**; real calls only via a controlled measurement script.
 8. **STOP at gates:** 🚦 steps belong to the human — never continue without approval.
 9. **Stay in context (question ≠ status report):** answer a mid-phase question with **the short answer requested** — do not re-dump the whole phase workflow/status every time. Full status only when asked or at gates.
-10. **Working-tree isolation:** only **ONE active dev session per directory** — parallel parts run in **separate git worktrees** (the kickoff specifies). Checkpoint commit before any branch switch; never touch another part's files.
-11. **English-only docs:** ALL documentation (living-docs, specs, runbooks, commit messages, code comments) is written in **English**, regardless of chat language — chat follows the user's language. Rationale: fewer tokens, stronger instruction-following, consistent terminology across sessions.
+10. **Serial by design (one branch at a time):** one active part, one branch; checkpoint commit before any branch switch. Never run two writing subagents at once — they share this working tree.
+11. **English-only docs:** ALL documentation (living-docs, specs, runbooks, commit messages, code comments) is written in **English**, regardless of chat language — chat follows the user's language.
+12. **Delegation-first (context hygiene):** never read product code into this context — dispatch **scout** for questions, **implementer** for changes, **verifier** for GATE 4. This context carries decisions and summaries, not file contents. *(Inline edits are allowed only for living-docs and hotfix-sized changes.)*
+13. **Tidy ritual:** after every merge (and after ops blocks) run `/tidy` — sync the docs to ground truth, then offer the reset: **`/clear` at a part boundary (recommended — the solo "fresh session")**, `/compact` mid-part. You cannot reset your own context; what you can do is keep it from filling (rule 12), make the reset zero-risk, and ask (this rule).

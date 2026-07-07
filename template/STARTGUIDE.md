@@ -1,24 +1,26 @@
-# STARTGUIDE — yeni proje kurulumu (insan için)
+# STARTGUIDE — new project setup (for the human)
 
-> Kaynak: vibe-playbook v3 `template/`. Toplam süre ~10 dk.
-> Süreç kuralları: [workflow.md](workflow.md) · gerekçeler: kanonik playbook reposu.
+> Source: vibe-playbook v5 `template/` (orchestrated profile). Total time ~10 min.
+> **Solo alternative:** one session + subagents, lower ceremony → `template-solo/`.
+> Process rules: [workflow.md](workflow.md) · rationale: the canonical playbook repo.
+> Language: chat with the agents in any language — **all docs are written in English** (CLAUDE.md rule 11).
 
-## 1. Kopyala (2 dk)
+## 1. Copy (2 min)
 
 ```bash
-cp -R <vibe-playbook>/template/. <yeni-proje>/
-cd <yeni-proje>
+cp -R <vibe-playbook>/template/. <new-project>/
+cd <new-project>
 chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "iskelet: playbook v3 template"
+git init && git add -A && git commit -m "scaffold: playbook v5 template"
 ```
 
-## 2. Uyarla (5 dk)
+## 2. Adapt (5 min)
 
-- **CLAUDE.md:** proje adı + tek cümle; Test/Lint/Typecheck komutları (stack netleşince doldur).
-- **.claude/settings.json:** `allow` listesindeki `npm` örneklerini kendi stack'ine göre değiştir.
-- **Opsiyoneller:**
-  - Tasarım track'i kullanılacaksa: **Claude Design MCP'sini bağla** — tasarım karar vericisi Claude Design'dır ve bağlantı için Claude Code **terminalden (CLI)** kullanılmalıdır (**zorunlu**; G-işlerini desktop/IDE'den değil terminalden yürüt). Kullanılmayacaksa `docs/design/` silinebilir.
-  - **PreCompact emniyet ağı** istersen `settings.json` → `"hooks"` içine ekle:
+- **CLAUDE.md:** project name/one-liner + Test/Lint/Typecheck commands (once the stack is locked).
+- **.claude/settings.json:** replace the `npm` examples in the allow list to match your stack.
+- **Optional:**
+  - Using the design track: **connect the Claude Design MCP** — the design decision-maker is Claude Design and the connection requires Claude Code **in the terminal (CLI)** (**mandatory**; run G work from the terminal, not desktop/IDE). Not using it: `docs/design/` can be deleted.
+  - Want the **PreCompact safety net**: add to `settings.json` → `"hooks"`:
 
 ```json
 "PreCompact": [
@@ -26,32 +28,35 @@ git init && git add -A && git commit -m "iskelet: playbook v3 template"
 ]
 ```
 
-## 3. Faz 0'ı başlat
+## 3. Start Phase 0
 
-Taze bir Claude session aç ve şunu yapıştır:
+Open a fresh Claude session and paste:
 
 ```
-Sen bu projenin ① YÖNETİCİ session'ısın. Rol ve kurallar: workflow.md + CLAUDE.md (otomatik yüklendi).
+You are this project's ① MANAGER session. Role and rules: workflow.md + CLAUDE.md (auto-loaded).
 
-İLK İŞ: memory-seed/manager-session-pattern.md dosyasını oku ve memory'ne kaydet
-(sonraki yönetici session'lar aynı sözleşmeyle çalışsın).
+FIRST TASK: read memory-seed/manager-session-pattern.md and save it to your memory
+(so every future manager session works under the same contract).
 
-FAZ 0 = PLANLAMA — kod yazılmaz. İş sırası:
-1. Benimle soru-cevap: problem/kapsam netleşir → PRD.md dolar
-2. Teknik kararlar (gerekçeli öneri + onayım) → architecture.md + data-model.md
-3. İş parçalara bölünür (P kod / G tasarım) → progress.md tablosu + module-specs iskeletleri
-4. phase-kickoffs.md: sonraki fazların taslak kickoff'ları
-5. open-questions.md + NEEDS-FROM-USER.md: açık kalanlar
-   (VARSAYMA — ürün kararlarını bana sor)
+PHASE 0 = PLANNING — no code. Order of work:
+1. Q&A with me: clarify the problem/scope → fill PRD.md
+2. Technical decisions (proposal with rationale + my approval) → architecture.md + data-model.md
+3. Split the work into parts (P code / G design) → progress.md table + module-spec skeletons
+4. phase-kickoffs.md: draft kickoffs for later phases
+5. open-questions.md + NEEDS-FROM-USER.md: everything left open
+   (DO NOT ASSUME — ask me for product decisions)
 
-ÇIKIŞ 🚦 FAZ 0 KAPISI (en büyük kapı): tüm docs'u onayıma sun; kararlar burada kilitlenir.
-İLK ADIM: PRD için bana soracağın soruları çıkar — başka hiçbir şey yapmadan.
+All docs in English (CLAUDE.md rule 11); chat follows my language.
+EXIT 🚦 PHASE 0 GATE (the biggest one): present all docs for my approval; decisions lock here.
+FIRST STEP: extract the questions you will ask me about the PRD — before doing anything else.
 ```
 
-## 4. Günlük akış (özet)
+## 4. Daily flow (summary)
 
-- **Yeni parça:** yönetici session'da `/new-part P-N` → çıkan kickoff bloğunu **taze** session'a yapıştır.
-- **Kapılar:** K1/K2 onayı sende · `/gate3` kanıtı + gerçekte dene (K3) · `/review` + onay işareti (K4).
-- **K4 onay işareti:** onay verince session `echo <branch> > .claude/.gate4-ok` yazar → merge → işaret silinir. main-guard hook, işaretsiz merge'i zaten bloklar.
-- **Ops işi:** ayrı Ops session; senkron `NEEDS-FROM-USER.md` + `infra-state.md` üzerinden.
-- **Faz kapanışı:** retro — 3 soru (workflow.md).
+- **New part:** `/new-part P-N` in the manager session → paste the kickoff block into a **fresh** session.
+- **Parallel parts:** each runs in its **own worktree directory** (the kickoff says so) — never run two sessions in one directory; that is the root of conflicts and code loss.
+- **Pasting secrets:** never paste real values into chat — "ready, in .env" is enough. If you paste one by accident, the agent applies the leak protocol (does not spread the value, deletes it wherever it was written, **recommends rotation** — chat history cannot be unsaid; rotation is the only permanent fix).
+- **Gates:** GATE 1/2 approval is yours · `/gate3` evidence + try it for real (GATE 3) · `/review` + approval marker (GATE 4).
+- **GATE 4 marker:** on approval the session runs `echo <branch> > .claude/.gate4-ok` → merge → marker removed. main-guard blocks unmarked merges anyway.
+- **Ops work:** separate Ops session; sync via `NEEDS-FROM-USER.md` + `infra-state.md`.
+- **Phase close:** retro — 3 questions (workflow.md).

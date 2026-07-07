@@ -1,16 +1,16 @@
 ---
-description: KAPI 4 akışı — verifier-subagent doğrular, bulgu raporu + onay adımı sunulur
+description: GATE 4 flow — the verifier subagent verifies; findings + approval step are presented
 ---
 
-KAPI 4 review akışını başlat (parça: $ARGUMENTS):
+Start the GATE 4 review flow (part: $ARGUMENTS):
 
-1. Spec'in **KAPI 4 kabul listesi** + **kilitli kararlarını** oku.
-2. **verifier** agent'ına delege et — girdi: kabul listesi + kapsam (`git diff main...<branch>`); çıktı: HÜKÜM/KANIT/RİSKLER/TESTLER raporu. Doğrulama dosyalarını KENDİ context'ine okuma (yönetici context'i temiz kalır).
-3. Kullanıcıya sun:
-   - (a) verifier bulgu raporu (kompakt),
-   - (b) kritik diff noktaları — dosya:satır listesi, para/auth/veri yüzeyi önce,
-   - (c) tam diff komutu: `git diff main...<branch>`.
-4. 🚦 **ONAY İNSANINDIR.** Onay gelirse sırayla:
-   `echo <branch> > .claude/.gate4-ok` → merge → `rm .claude/.gate4-ok` → docs güncelle (progress · issues · docs/archive/changelog) → yeni session öner.
+1. Read the spec's **GATE 4 acceptance list** + **locked decisions**.
+2. Delegate to the **verifier** agent — input: the acceptance list + scope (`git diff main...<branch>`); output: a VERDICT/EVIDENCE/RISKS/TESTS report. Do NOT read the verification files into YOUR own context (the manager context stays clean).
+3. Present to the user:
+   - (a) the verifier findings report (compact),
+   - (b) critical diff spots — a file:line list, money/auth/data surfaces first,
+   - (c) the full diff command: `git diff main...<branch>`.
+4. 🚦 **APPROVAL BELONGS TO THE HUMAN.** On approval, in order:
+   `echo <branch> > .claude/.gate4-ok` → merge → `rm .claude/.gate4-ok` → update the docs (progress · issues · docs/archive/changelog) → suggest a new session.
 
-Onay gelmeden merge DENEME (main-guard zaten bloklar). RET/ŞARTLI ise: bulgular dev session'a düzeltme olarak döner.
+Never attempt a merge before approval (main-guard blocks it anyway). REJECTED/CONDITIONAL: the findings go back to a dev session as fixes.

@@ -4,8 +4,9 @@
 > Domain-nötr: her yeni projede kopyalanır, Faz 0'da projeye özelleşir.
 > **Üç birinci-sınıf hedef:** tutarlılık · sürdürülebilirlik · bağlamın (context) korunması.
 >
-> **Sürüm: v3** (2026-07-04) · kanonik ev = bu repo, kopyalar türevdir (§15) · değişiklikler → [CHANGELOG.md](CHANGELOG.md)
+> **Sürüm: v5** (2026-07-07) · kanonik ev = bu repo, kopyalar türevdir (§15) · değişiklikler → [CHANGELOG.md](CHANGELOG.md)
 > **v3 ile:** iskelet artık prose değil — [`template/`](template/) gerçek dosyalar; yeni proje = kopyala + `template/STARTGUIDE.md` (§14).
+> **v5 ile:** iki profil — [`template/`](template/) (**orchestrated**: çok-session) · [`template-solo/`](template-solo/) (**solo**: tek-session + subagent'lar, §17).
 
 ---
 
@@ -71,7 +72,7 @@ MERGE + docs          → main'e giriş YALNIZ burada (main-guard hook enforce e
 ## 3. Faz & parça yapısı
 
 - **Faz 0 = PLANLAMA (kod yok):** yönetici tüm dokümanları üretir → 🚦 en büyük kapı (kararlar burada kilitlenir). Çıktı: living-docs seti + `phase-kickoffs.md` (sonraki fazların taslak komutları).
-- **Faz N:** parçalara bölünür — kod parçaları `P1, P2…` · tasarım `G1, G2…` · ops işleri kendi akışında.
+- **Faz N:** parçalara bölünür — kod parçaları `P1, P2…` · tasarım `G1, G2…` · ops işleri kendi akışında. **Bölme kuralı:** paralel yürüyecek parçaların **dosya-kapsamları ayrık** tutulur (client/backend gibi); aynı dosyalara dokunanlar paralel değil **sıralı** çalışır — conflict/kod-kaybı riski bölme anında kökten kesilir.
 - Her parça **taze session**'da başlar (context temiz). Yönetici parçanın kickoff'unu rafine eder.
 
 ---
@@ -184,10 +185,13 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 - **Commit disiplini (branch + checkpoint):** parça kendi branch'inde akar (`wip/P-N`, `feat/…` — main'de doğrudan iş YOK). Küçük **checkpoint commit'leri serbest ve teşviklidir** — kayıp penceresi (crash · yanlış tool çağrısı · kas-hafızası refleksi) hiç açılmaz. **Değişmez kural: main'e KAPI 4'süz hiçbir şey girmez.** Review diff'i tek komut: `git diff main...<branch>`. İstenirse KAPI 4 sonrası history squash/curate edilir (yalnız o branch'te, önceden izinli).
 - **Git güvenliği:** uncommitted iş varken **`git restore/stash/clean/checkout --` ASLA**; yıkıcı işlem (force/reset/branch-sil) için önce sor. *(Checkpoint disiplini bu riski zaten küçültür.)*
 - **Hook > talimat:** enforce edilebilen hijyen kuralı modele talimatla değil **harness hook'uyla** uygulanır (guard-env = secret · **main-guard = main'de kod-commit + KAPI4-işaretsiz merge bloğu** · PreCompact = devir-durumu). Talimat unutulur/atlanır; hook unutmaz. Genel ilke: **enforce edilebilen invariant hook'a, otomatikleştirilebilen kanıt script'e** (/gate3) — insan dikkati yalnız gerçek muhakemeye.
-- **Secret hijyeni:** `.env` okunmaz/yazdırılmaz (**PreToolUse guard hook** enforce eder); koda gömülmez.
+- **Secret hijyeni:** `.env` okunmaz/yazdırılmaz (**PreToolUse guard hook** enforce eder); koda gömülmez. **Sızıntı-protokolü (kullanıcı-taraflı sızıntı):** kullanıcı chat'e hassas değer yapıştırırsa (DB URL, API key…) — değer TEKRAR EDİLMEZ, hiçbir dosyaya/doc'a/komuta yazılmaz; bir yere yazıldıysa DERHAL silinir; kullanıcıya bildirilir + **rotasyon önerilir** *(dürüst sınır: chat geçmişinden gerçek silme yoktur — tek kalıcı çözüm rotasyon)*; doğru yer `.env`/panel'dir, değeri insan koyar. **secret-scan hook'u** (UserPromptSubmit, §12) tam bu anda modele protokolü hatırlatır — bloklamaz, dürter.
 - **Anti-confabulation (genel):** §1'deki kural yalnız Ops'un değildir — compaction geçirmiş **her** session için geçerli: "neden X?" cevabı docs'tan verilir; docs'ta yoksa **"kayıtlı değil"** — uydurulmaz.
+- **Bağlam-disiplini (soru ≠ durum raporu):** faz yürürken kullanıcının sorusuna **istenen kısa cevap** verilir — her soruda fazın tüm iş akışını/durumunu yeniden dökmek context'i şişirir, okumayı öldürür. Tam durum özeti yalnız istendiğinde ya da kapı anlarında.
+- **Working-tree izolasyonu (paralel session):** git'te working tree TEKTİR — aynı dizinde iki session iki branch'te "aynı anda" çalışamaz; biri diğerinin işini ezer/karıştırır (conflict + kod kaybı). Kural: aynı dizinde aynı anda **tek aktif geliştirme session'ı**; paralel parçalar **ayrı `git worktree`**'de (`git worktree add ../<proje>-<parça> wip/<parça>`, merge sonrası remove); branch değişiminden önce checkpoint commit. Kapsam ayrıklığı §3'te bölme anında sağlanır; /new-part paralellik kontrolü yapar.
 - **Test:** dış-servis/LLM çağrıları **mock-first** (deterministik + ücretsiz); gerçek çağrı yalnız kontrollü ölçüm script'i.
 - **Ortam kuralları:** projeye özel footgun'lar (portlar, sürüm pinleri, "şu komut şu path'te") — spec/memory'de.
+- **Dil kuralı (İngilizce docs):** chat dili kullanıcıya uyar (Türkçe serbest) — ama **TÜM dokümantasyon** (living-docs, spec'ler, runbook'lar, commit mesajları, kod yorumları) **İNGİLİZCE** yazılır. Gerekçe: daha az token (Türkçe belirgin biçimde daha pahalı tokenize olur) · modelin İngilizce talimat-takibi daha güçlü · session'lar arası tutarlı terminoloji. Template bu yüzden baştan sona İngilizce'dir; kural CLAUDE.md 11'de enforce edilir.
 
 ---
 
@@ -217,6 +221,7 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 │                      #   deny (.env oku, rm -rf, force-push, git clean) + hook kayıtları
 ├─ hooks/
 │  ├─ guard-env.sh     # PreToolUse: secret dosya (.env*) erişimini fiziksel engelle (.env.example serbest)
+│  ├─ secret-scan.sh   # UserPromptSubmit: kullanıcı mesajında secret sezilirse sızıntı-protokolünü hatırlat (§9)
 │  ├─ main-guard.sh    # PreToolUse(Bash): main'de KOD commit'i + KAPI4-işaretsiz merge'i fiziksel blokla
 │  │                   #   (docs-only commit main'de serbest · işaret: insan onayı → .claude/.gate4-ok)
 │  └─ pre-compact.sh   # (OPSİYONEL — proje başında isteğe göre) PreCompact: zemin fotoğrafı + bildirim (§10)
@@ -237,15 +242,17 @@ Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kura
 
 ---
 
-## 14. Base-project iskeleti (kopyala-kullan)
+## 14. Base-project iskeleti (kopyala-kullan) — orchestrated profil
 
-> **v3'ten itibaren bu iskelet [`template/`](template/) olarak MATERIALIZE edilmiştir** — yeni proje = `template/` içeriğini kopyala + [`STARTGUIDE.md`](template/STARTGUIDE.md)'yi izle. Gerekçe: prose'dan her bootstrap bir yeniden-yorumlamaydı ve drift daha doğumda başlıyordu; gerçek dosyalar tek doğruluktur, iskelet değişiklikleri de sürümlenir (§15). `workflow.md` playbook'un **normatif özetidir** (yalnız kural; gerekçeler burada kalır) — bu sayede playbook yeniden yapılandırılmadan çekirdek/rationale ayrımı kendiliğinden oluşur.
+> Bu bölüm **orchestrated** (çok-session) profili anlatır; **solo** (tek-session + subagent) varyantı için → §17 / [`template-solo/`](template-solo/).
+
+> **v3'ten itibaren bu iskelet [`template/`](template/) olarak MATERIALIZE edilmiştir** — yeni proje = `template/` içeriğini kopyala + [`STARTGUIDE.md`](template/STARTGUIDE.md)'yi izle. Gerekçe: prose'dan her bootstrap bir yeniden-yorumlamaydı ve drift daha doğumda başlıyordu; gerçek dosyalar tek doğruluktur, iskelet değişiklikleri de sürümlenir (§15). `workflow.md` playbook'un **normatif özetidir** (yalnız kural; gerekçeler burada kalır) — bu sayede playbook yeniden yapılandırılmadan çekirdek/rationale ayrımı kendiliğinden oluşur. **Dil: template'in tamamı İNGİLİZCE'dir** (§9 dil kuralı — agent context'ine giren her şey İngilizce; bu playbook insan-rationale dokümanı olarak Türkçe kalır).
 
 ```
 template/  →  <yeni-repo>/
 ├─ STARTGUIDE.md          # insan: kurulum adımları + Faz 0 kickoff komutu + opsiyon anahtarları
 ├─ workflow.md            # playbook'un NORMATİF özeti (başında: "← playbook vN"; sonunda "Proje sapmaları")
-├─ CLAUDE.md              # LEAN: doküman haritası + 8 kritik kural (otomatik yüklenir)
+├─ CLAUDE.md              # LEAN: doküman haritası + 11 kritik kural (otomatik yüklenir)
 ├─ progress.md · issues.md            # state panoları (boş başlar; session başı yüklenir)
 ├─ open-questions.md · NEEDS-FROM-USER.md · .env.example · .gitignore
 ├─ PRD.md · architecture.md · data-model.md      # plan-track (Faz 0'da dolar)
@@ -298,3 +305,30 @@ Faz 0 (plan)──[🚦ONAY]──> Faz N parçalara böl
 ```
 
 > **Üç hedefin nasıl korunduğu:** TUTARLILIK = kararlar living-doc'a işlenir + zemin-doğrulama (yöneticinin kendi hafızası dahil hiçbir kaynağa körü körüne güven yok) · SÜRDÜRÜLEBİLİRLİK = state/arşiv ayrımı + bloat-budget + devir kanalları + faz-retro/geri-akış · BAĞLAM KORUNMASI = session tipleri ayrık context + taze-session tercihi + verifier-subagent (yönetici context'i temiz) + PreCompact emniyet ağı.
+
+---
+
+## 17. İkinci profil: SOLO — tek-session vibe (`template-solo/`)
+
+Aynı metodolojinin iki profili vardır; **DNA ortaktır** (living-docs sistemi · insan kapıları · hook'lar · İngilizce-docs · anti-confabulation · meta-öğrenme). Fark, işin session'lara mı subagent'lara mı dağıtıldığıdır:
+
+| | **Orchestrated** (`template/`) | **Solo** (`template-solo/`) |
+|---|---|---|
+| Session | çok-session (4 rol) | **TEK session + subagent'lar** |
+| Geliştirme | interaktif dev session'ları | **implementer**-subagent |
+| Kod okuma | dev session'ın işi | **scout**-subagent (ana context'e kod girmez) |
+| Paralellik | worktree ile paralel track'ler | SIRALI — tek branch, tek yazan-subagent |
+| İzinler | standart (commit/merge sorulur) | **GENİŞ** (Edit/Write, commit, merge önceden izinli — kontrol noktası KAPILAR, invariant'lar hook'ta) |
+| Tören | daha yüksek (kickoff/devir) | düşük (`/part` sürücüsü; kickoff/devir yok) |
+| Ne zaman | büyük iş, paralel track'ler, uzun fazlar | küçük/orta iş, solo akış, hız |
+
+**Mimari:** ana session = **orkestratör** (yönetici + dispatcher). Ürün kodu ana context'te ne yazılır ne okunur — scout cevaplar, implementer değiştirir, verifier doğrular; orkestratöre yalnız **kompakt raporlar** döner. §4.3'ün "geliştirme subagent'a taşınmaz" sınırı solo'da **bilinçli tersine çevrilir:** kullanıcı ham dev akışı yerine orkestratör raporlarını izler *(trade: içeriye görünürlük ↓, tek-session konforu ↑)*. Kapılar aynen insanındır; **zemin-doğrulama aynen geçerlidir** — subagent raporu da session raporu kadar yanılabilir; her implementer dispatch'i sonrası `git log`/`diff --stat` ile doğrulanır. Hook'lar subagent tool-çağrılarında da işler — guard'lar her yerde geçerli.
+
+**Otonomi (insan bağımlılığı kapılara iner):** kapılar ARASINDA insan hiç durdurulmaz — izinler bilinçli geniştir (Edit/Write, `git commit/merge` önceden izinli; push/reset/rebase yine sorar, yıkıcılar deny). Bu güvenlidir çünkü kontrol izin-promptunda değil: **kapılar insan onayı, invariant'lar hook** (main-guard KAPI4-işaretsiz merge'i zaten bloklar). Dispatch'ler **toplu gider**: küçük parça = onaylı planın tamamı tek dispatch; büyük = 2–4 adımlık paketler; implementer her adımda checkpoint commit atar — history granüler kalır, kesinti azalır.
+
+**Context hijyeni (solo'nun kalbi) — üç katman:**
+1. **Önleme (delegation-first, kural 12):** dosya içerikleri ana context'e hiç girmez → context doğal olarak yavaş dolar; ana context karar + özet taşır.
+2. **Güvenli sıfırlama (`/tidy`, kural 13):** her merge/ops bloğu sonrası — docs zemine eşitlenir, rotasyon yapılır, "yalnız chat'te yaşayan karar" docs'a süpürülür → sıfırlama önerilir: **parça sınırında `/clear` (ÖNERİLEN — orchestrated'daki "taze session"ın solo karşılığı)**, parça ortasında `/compact`. **Dürüst sınır:** model kendi context'ini SİLEMEZ (`/clear`/`/compact` kullanıcı komutlarıdır) — yapabildiği: dolmasını önlemek, sıfırlamayı sıfır-riskli kılmak, tek tuşluk öneri vermek. Kalite sırası: sınırda `/clear` > `/compact` > plansız auto-compaction (o bile güvenli — snapshot + docs disiplini). **Restart-testi** (devir-testinin solo karşılığı): `/clear` sonrası taze session CLAUDE.md + living-docs + memory'den kaldığı yerden devam edebilmeli. *(Memory `/clear`'dan sağ çıkar → davranış memory'de, durum docs'ta, temizlik ucuz. Yani solo "tek session" = tek pencere/akış demektir, tek ömürlük context DEĞİL — orchestrated'daki taze-session hijyeni solo'da parça sınırındaki /clear ile aynen yaşar.)*
+3. **Emniyet ağı (PreCompact default-ON):** solo session uzun yaşar, compaction kesin gelir — orchestrated'da opsiyonel olan hook solo'da varsayılandır.
+
+**Mod geçişi:** living-docs katmanı iki profilde birebir aynıdır (aynı dosya adları, aynı spec şablonu) → proje ortasında geçiş mümkündür: `.claude/` + `workflow.md` + `CLAUDE.md` değişir, docs olduğu gibi kalır. **Solo başla, paralellik doğunca orchestrated'a geç** — desteklenen yol budur.

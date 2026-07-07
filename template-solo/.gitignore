@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.example
+.claude/.gate4-ok
+.DS_Store
+node_modules/

@@ -1,69 +1,70 @@
-# workflow.md — çalışma kuralları (normatif özet)
+# workflow.md — working rules (normative summary)
 
-> **← playbook v3** · kanonik ev: vibe-playbook reposu. Burada yalnız KURAL var; gerekçeler playbook'ta.
-> Projeye özel sapmalar en alttaki "Proje sapmaları" bölümüne işlenir — bu özetin gövdesine dokunulmaz.
-> Kısaltma: K1–K4 = KAPI 1–4 (insan kapıları).
+> **← playbook v5 (orchestrated profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
+> Project-specific deviations go into "Project deviations" at the bottom — do not edit the body.
+> Abbreviation: GATE 1–4 = the human gates.
 
-## Session tipleri
+## Session types
 
-| Tip | Yazar | Ömür | Living-doc'u |
+| Type | Writes | Lifetime | Living-docs |
 |---|---|---|---|
-| ① Yönetici | doküman (kod ❌) | faz/proje boyu (devirle) | progress · issues · open-questions |
-| ② Geliştirme | kod | parça-başı (taze) | module-specs/`<parça>`.md |
-| ③ Ops | config/script (ürün-kodu ❌) | kalıcı = cache; kaynak = runbook | infra-state · docs/ops/* |
-| ④ Tasarım | UI-kod | iş-başı (G-numaralı) | docs/design/* |
+| ① Manager | docs (code ❌) | phase/project (handover) | progress · issues · open-questions |
+| ② Development | code | per-part (fresh) | module-specs/`<part>`.md |
+| ③ Ops | config/scripts (product code ❌) | persistent = cache; source = runbooks | infra-state · docs/ops/* |
+| ④ Design | UI code | per-task (G-numbered) | docs/design/* |
 
-> Tasarım (G) işlerinde **karar verici: Claude Design** (MCP ile bağlı). Bağlantı için Claude Code **terminalden (CLI)** kullanılır — **zorunlu**.
+> For design (G) work the **decision-maker is Claude Design** (connected via MCP). The connection requires Claude Code **in the terminal (CLI)** — mandatory.
 
-## Parça döngüsü
+## Part cycle
 
 ```
-/spec → 🚦K1 · /plan → 🚦K2 · IMPL (branch'te checkpoint'ler) ·
-/gate3 → 🚦K3 (kanıt bloğu + insan gerçekte dener) ·
-/review → 🚦K4 (verifier-subagent + İNSAN onayı) · MERGE + docs → yeni session
+/spec → 🚦GATE 1 · /plan → 🚦GATE 2 · IMPL (checkpoint commits on the branch) ·
+/gate3 → 🚦GATE 3 (evidence block + human tries it for real) ·
+/review → 🚦GATE 4 (verifier subagent + HUMAN approval) · MERGE + docs → new session
 ```
 
-- **Kapı-profili** (spec'te yazar): küçük/düşük-riskli parçada **K1+K2 tek onayda birleşir**; para/auth/veri-kaybı yüzeyinde **asla** — tam profil.
-- **K4 onayı insanındır.** Onay sonrası: `echo <branch> > .claude/.gate4-ok` → merge → `rm .claude/.gate4-ok`. (main-guard hook işaretsiz merge'i bloklar.)
-- **İptal / geri-dönüş:** parça iptali = branch terk (silme = önce sor) + issues'a tek satır + spec'e `İPTAL` · IMPL'de plan çürüdü = K2'ye **delta-plan** ile dön (sıfırdan değil) · K4 spec-seviyesi kusur buldu = K1'e dön, ders retro'ya.
+- **Gate profile** (written in the spec): small/low-risk part → **GATES 1+2 combine into one approval**; money/auth/data-loss surface → **never combined**, full profile.
+- **GATE 4 approval belongs to the human.** After approval: `echo <branch> > .claude/.gate4-ok` → merge → `rm .claude/.gate4-ok`. (main-guard blocks unmarked merges.)
+- **Cancel / rollback:** part cancelled = abandon the branch (deleting = ask first) + one line in issues + mark the spec `CANCELLED` · plan falls apart mid-IMPL = return to GATE 2 with a **delta plan** (not from scratch) · GATE 4 finds a spec-level flaw = return to GATE 1; the lesson goes to the retro.
+- **Parallel development (working-tree isolation):** ONE active session per directory. Parallel parts run in separate **git worktrees**: `git worktree add ../<project>-<part> wip/<part>` (the kickoff specifies); after merge `git worktree remove ../<project>-<part>`. The Manager partitions parallel parts with **disjoint file scopes** — parts touching the same files run **sequentially**, not in parallel.
 
-## Kritik kurallar
+## Critical rules
 
-CLAUDE.md'deki 8 kural her session'da geçerlidir. 1 ve 3 fizikseldir: **main-guard** (main'de kod-commit + işaretsiz merge bloğu) ve **guard-env** (secret dosya erişim bloğu) hook'ları enforce eder.
+The 11 rules in CLAUDE.md apply to every session. Rules 1 and 3 are physical: enforced by **main-guard** (blocks code commits on main + unmarked merges) and **guard-env** (blocks secret-file access); **secret-scan** (UserPromptSubmit) reminds the leak protocol when a secret-looking value appears in a user message.
 
 ## Living-docs
 
-- **STATE** (progress · issues · architecture · data-model · infra-state · specs) = **EDIT**, küçük kalır, "şu anki gerçek". **ARŞİV** (docs/archive/*) = **APPEND**, otomatik YÜKLENMEZ (yalnız talep üzerine).
-- **Rotasyon:** çözülen issue → archive/changelog'a tek satır · biten faz → progress'te tek satıra iner + `phase-N-summary.md` · **bloat-budget** ~150–200 satır → proaktif buda + bildir.
-- **Altın kural:** yapısal karar inline söylenmez, ilgili doc'a **İŞLENİR** (session sınırını aşsın).
+- **STATE** (progress · issues · architecture · data-model · infra-state · specs) = **EDIT**, stays small, "current truth". **ARCHIVE** (docs/archive/*) = **APPEND**, never auto-loaded (on request only).
+- **Rotation:** resolved issue → one line in archive/changelog · finished phase → one line in progress + `phase-N-summary.md` · **bloat budget** ~150–200 lines → prune proactively + notify.
+- **Golden rule:** structural decisions are not mentioned — they are **written in** (so they survive session boundaries).
 
-## Yönetici döngüsü
+## Manager loop
 
-rapor al → **REPO'DAN doğrula** (git log/status + docs; rapor-repo çelişkisini kickoff'a taşıma, kaynağı düzelt) → `/new-part` ile kickoff rafine → taze session'da çalıştırılır.
+receive report → **verify against the REPO** (git log/status + docs; never carry a report/repo contradiction into a kickoff — fix the source) → refine the kickoff via `/new-part` → run it in a fresh session.
 
-- K4 doğrulama okumaları **verifier-subagent**'a delege edilir — yönetici kendi context'ine dosya okumaz (temiz kalır; kendi kod hafızası da güvenilmez kaynaktır).
+- GATE 4 verification reads are **delegated to the verifier subagent** — the Manager never reads files into its own context (it stays clean; its own code memory is also an unreliable source).
 
 ## Ops
 
-- **Anında-runbook:** her neden-kararı iş "bitti" sayılmadan runbook'a düşer. Yazılmamış karar YOK hükmündedir.
-- **El-ele:** ② artefaktı yazar + lokal doğrular → ③ altyapıya uygular + infra-state günceller → **birlikte** gerçek ortamda doğrulanır. "Deploy edildi"yi AI tek başına diyemez.
-- İhtiyaç akışı: `NEEDS-FROM-USER.md`'ye yaz + **DUR**.
+- **Instant runbook:** every why-decision lands in the runbook before the task counts as done. An unwritten decision DOES NOT EXIST.
+- **Hand-in-hand:** ② writes the artifact + verifies locally → ③ applies it to the infrastructure + updates infra-state → verified **together** in the real environment. AI alone never declares "deployed".
+- Needs flow: write to `NEEDS-FROM-USER.md` + **STOP**.
 
-## Devir
+## Handover
 
-- **Tetik = kalite + doğal sınır** (sabit token sayısı değil). Tutarlı birimi aynı session'da bitirmek serbest; doğal sınırda öner: *"birim bitti / kalite düşüyor — docs güncel, yeni session?"*
-- **Devir-testi:** devir-prompt'ta living-docs'ta olmayan bilgi varsa bu **docs'un açığıdır** — prompt değil doc düzeltilir.
-- PreCompact hook = opsiyonel emniyet ağı (kurulum: STARTGUIDE §2).
+- **Trigger = quality + natural boundary** (not a fixed token count). Finishing a coherent unit in the same session is fine; at the natural boundary suggest: *"unit done / quality degrading — docs are current, new session?"*
+- **Handover test:** if the handover prompt contains information missing from the living-docs, that is a **docs gap** — fix the doc, not the prompt.
+- PreCompact hook = optional safety net (setup: STARTGUIDE §2).
 
-## Faz-retro (kapanışta, ~5 dk)
+## Phase retro (at close, ~5 min)
 
-1. Hangi kapı **gerçek** bir şey yakaladı?
-2. Hangi kapı **okunmadan/özetten** onaylandı?
-3. Hangi kural **ihlal/bypass** edildi — neden?
+1. Which gate caught something **real**?
+2. Which gate was approved **without reading**?
+3. Which rule was **violated/bypassed** — and why?
 
-→ **PROJE** dersi = buraya ("Proje sapmaları") / ilgili spec'e işlenir · **PLAYBOOK** dersi = kanonik repoya changelog adayı.
-**Kalibrasyon:** üst üste okunmadan onaylanan kapı o track'te hafifletilir; gerçek yakalayan ağır kalır.
+→ **PROJECT** lesson = recorded here ("Project deviations") / in the relevant spec · **PLAYBOOK** lesson = changelog candidate for the canonical repo.
+**Calibration:** a gate repeatedly approved without reading gets lightened on that track; gates that catch real things stay heavy.
 
-## Proje sapmaları
+## Project deviations
 
-*(Faz 0'da ve retrolarda doldurulur — boş)*
+*(filled during Phase 0 and retros — empty)*

@@ -1,6 +1,6 @@
-# phase-kickoffs.md — sonraki fazların taslak kickoff'ları (Faz 0'da dolar; EDIT)
+# phase-kickoffs.md — draft kickoffs for upcoming phases (filled during Phase 0; EDIT)
 
-> Faz başlarken yönetici buradaki taslağı günceller; parça bazında rafine `/new-part` ile yapılır.
+> When a phase starts, the Manager updates the draft here; per-part refinement happens via `/new-part`.
 
-## Faz 1 — <ad>
-*(taslak)*
+## Phase 1 — <name>
+*(draft)*
