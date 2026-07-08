@@ -1,16 +1,27 @@
 # STARTGUIDE — new project setup, SOLO mode (for the human)
 
-> Source: vibe-playbook v5 `template-solo/`. Total time ~10 min.
+> Source: vibe-playbook v6 `template-solo/`. Total time ~10 min.
 > **Solo = ONE session + subagents.** Low ceremony, serial flow. Need parallel tracks (client/backend/design at once)? Use `template/` (orchestrated) instead — or switch later; the living-docs are identical.
 > Language: chat in any language — **all docs are written in English** (CLAUDE.md rule 11).
 
-## 1. Copy (2 min)
+## 1. Scaffold (2 min)
+
+Easiest — via npm (renames `gitignore`, chmods hooks for you):
+
+```bash
+npx vibe-playbook init solo <new-project>
+cd <new-project>
+git init && git add -A && git commit -m "scaffold: playbook v6 solo template"
+```
+
+Or copy manually from a clone:
 
 ```bash
 cp -R <vibe-playbook>/template-solo/. <new-project>/
 cd <new-project>
+mv gitignore .gitignore        # shipped without the dot (npm packaging constraint)
 chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v5 solo template"
+git init && git add -A && git commit -m "scaffold: playbook v6 solo template"
 ```
 
 ## 2. Adapt (5 min)

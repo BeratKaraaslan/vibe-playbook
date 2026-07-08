@@ -1,6 +1,6 @@
 # workflow.md — working rules (normative summary, SOLO mode)
 
-> **← playbook v5 (solo profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
+> **← playbook v6 (solo profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
 > Project-specific deviations go into "Project deviations" at the bottom — do not edit the body.
 > Abbreviation: GATE 1–4 = the human gates.
 

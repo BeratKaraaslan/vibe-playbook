@@ -6,7 +6,16 @@ A reusable methodology + two ready-to-copy project templates for AI-driven ("vib
 
 The core problem this solves: LLM sessions lose context, drift, and confabulate. The fix here is structural, not hopeful — state lives on disk (living-docs), critical rules are physically enforced (hooks), humans approve at defined gates, and session context is treated as a disposable cache.
 
-> [PLAYBOOK.md](PLAYBOOK.md) holds the full methodology and its rationale (in Turkish — the author's working language). Everything an agent ever loads — both templates and every doc generated inside projects — is **English only**: fewer tokens, stronger instruction-following, stable terminology across sessions.
+> [PLAYBOOK.md](PLAYBOOK.md) holds the full methodology and its design rationale; [CHANGELOG.md](CHANGELOG.md) tracks the versioned process changes. Everything — the playbook, both templates, and every doc generated inside projects — is **English only**: fewer tokens, stronger instruction-following, stable terminology across sessions (chat with the agents in any language you like).
+
+## Install
+
+```bash
+npx vibe-playbook init solo my-project          # recommended starting profile
+npx vibe-playbook init orchestrated my-project  # multi-session profile
+```
+
+The CLI copies the chosen template, restores `.gitignore`, and makes the hooks executable. No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
 
 ## Pick a profile
 
@@ -26,6 +35,7 @@ Both profiles share the same DNA: the living-docs system, the four human gates, 
 
 - **Claude Code** (CLI). The design track additionally uses the **Claude Design MCP** as design decision-maker — that connection requires Claude Code run **from the terminal**.
 - `git`, `bash`, `python3` (used by the hooks). macOS/Linux.
+- Node ≥ 18 only if you scaffold via `npx` (the templates themselves need no Node).
 
 ## The gates (both profiles)
 
@@ -42,10 +52,11 @@ IMPL    →            checkpoint commits on a wip/ branch
 ## Quick start — Orchestrated (`template/`)
 
 ```bash
-cp -R vibe-playbook/template/. my-project/
-cd my-project
-chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v5 template"
+npx vibe-playbook init orchestrated my-project && cd my-project
+# — or manually from a clone:
+#   cp -R vibe-playbook/template/. my-project/ && cd my-project
+#   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
+git init && git add -A && git commit -m "scaffold: playbook v6 template"
 ```
 
 1. **Adapt (~5 min):** fill the `CLAUDE.md` placeholders (project name; test/lint/typecheck commands once the stack is locked) and replace the `npm` examples in `.claude/settings.json` → `allow` with your stack's commands.
@@ -61,10 +72,11 @@ Full guide: [`template/STARTGUIDE.md`](template/STARTGUIDE.md)
 ## Quick start — Solo (`template-solo/`)
 
 ```bash
-cp -R vibe-playbook/template-solo/. my-project/
-cd my-project
-chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v5 solo template"
+npx vibe-playbook init solo my-project && cd my-project
+# — or manually from a clone:
+#   cp -R vibe-playbook/template-solo/. my-project/ && cd my-project
+#   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
+git init && git add -A && git commit -m "scaffold: playbook v6 solo template"
 ```
 
 1. **Adapt (~5 min):** same as above (CLAUDE.md placeholders + settings allow list). The PreCompact snapshot hook is **on by default** in this profile.
@@ -105,12 +117,17 @@ Hooks apply to subagent tool calls too. They are safety nets against drift and a
 ## Repo layout
 
 ```
-PLAYBOOK.md        # methodology + rationale (Turkish)
-CHANGELOG.md       # versioned process changes (Turkish)
+PLAYBOOK.md        # the full methodology + design rationale
+CHANGELOG.md       # versioned process changes (v1 → v6)
 README.md          # this file
-template/          # orchestrated profile — multi-session (English)
-template-solo/     # solo profile — one session + subagents (English)
+package.json       # npm package (major version = playbook version)
+bin/cli.js         # zero-dependency scaffolder (npx vibe-playbook init …)
+template/          # orchestrated profile — multi-session
+template-solo/     # solo profile — one session + subagents
+test/              # hook test suites (npm test — runs against both templates)
 ```
+
+Note: the templates ship the file `gitignore` without a leading dot (npm always strips `.gitignore` files from packages); the CLI renames it on init — only manual copies need the `mv`.
 
 ## Versioning & the feedback loop
 

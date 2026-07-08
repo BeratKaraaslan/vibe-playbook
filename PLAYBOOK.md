@@ -1,334 +1,341 @@
 # Vibe-Coding Orchestration Playbook
 
-> Çok-session'lı AI geliştirme için yeniden-kullanılabilir metodoloji + base-project akışı.
-> Domain-nötr: her yeni projede kopyalanır, Faz 0'da projeye özelleşir.
-> **Üç birinci-sınıf hedef:** tutarlılık · sürdürülebilirlik · bağlamın (context) korunması.
+> Reusable methodology + base-project flow for multi-session AI development.
+> Domain-neutral: copied into every new project, specialized during Phase 0.
+> **Three first-class goals:** consistency · sustainability · context preservation.
 >
-> **Sürüm: v5** (2026-07-07) · kanonik ev = bu repo, kopyalar türevdir (§15) · değişiklikler → [CHANGELOG.md](CHANGELOG.md)
-> **v3 ile:** iskelet artık prose değil — [`template/`](template/) gerçek dosyalar; yeni proje = kopyala + `template/STARTGUIDE.md` (§14).
-> **v5 ile:** iki profil — [`template/`](template/) (**orchestrated**: çok-session) · [`template-solo/`](template-solo/) (**solo**: tek-session + subagent'lar, §17).
+> **Version: v6** (2026-07-08) · canonical home = this repo, copies are derivatives (§15) · changes → [CHANGELOG.md](CHANGELOG.md)
+> **Since v3:** the skeleton is no longer prose — [`template/`](template/) is real files; new project = copy + `template/STARTGUIDE.md` (§14).
+> **Since v5:** two profiles — [`template/`](template/) (**orchestrated**: multi-session) · [`template-solo/`](template-solo/) (**solo**: one session + subagents, §17).
+> **Since v6:** the whole repo is English and ships as an npm package (`npx vibe-playbook init <solo|orchestrated>`).
 
 ---
 
-## 0. Temel ilke
+## 0. Core principle
 
-Geliştirme **vibe coding** olarak akar (AI küçük adımlarla ilerler, insan yönlendirir) — ama akış serbest değil: **insan kapıları zorunludur.** AI kapılar arasında özgürce akar, kapılarda durur ve bekler. Para/auth/kredi/prod gibi kritik yerlerde vibe yok, **denetim** var.
+Development flows as **vibe coding** (the AI advances in small steps, the human steers) — but the flow is not free-form: **human gates are mandatory.** The AI flows freely between gates, stops at the gates, and waits. Wherever money/auth/credits/prod are involved there is no vibe — there is **oversight**.
 
-**Süreklilik iki katmanda yaşar:** (1) **repo living-docs** (proje durumu) + (2) **memory** (session davranışı). Hiçbir kritik bilgi tek session'ın context'inde kalmaz — her karar bir dokümana işlenir ("session sınırını aşsın").
+**Continuity lives in two layers:** (1) **repo living-docs** (project state) + (2) **memory** (session behavior). No critical information stays inside a single session's context — every decision is written into a doc ("it must outlive the session boundary").
 
 ---
 
-## 1. Session tipleri (4 rol)
+## 1. Session types (4 roles)
 
-| Tip | Yazar mı? | Ömür | Sorumluluk | Kendi living-doc'u |
+| Type | Writes? | Lifetime | Responsibility | Its living-docs |
 |---|---|---|---|---|
-| **① Yönetici** | Kod ❌ / Doküman ✅ | Faz/proje boyu (devrolur) | Süreç sahibi: fazı parçalara böler · kickoff rafine · kapı denetim · kararları sabitler | progress.md · issues.md · open-questions.md |
-| **② Geliştirme** | Kod ✅ | Parça-başı (taze) | Bir parçayı (P-numaralı) uçtan uca kodlar: spec→plan→impl→test→review→merge | module-specs/`<parça>`.md |
-| **③ Ops / DevOps** | Config/script ✅, ürün-kodu ❌ | **KALICI** (cache — ↓) | Manuel & altyapı: sunucu · panel (Dokploy vb.) · domain/DNS · ortam kurulumu · CI/CD altyapısı · secret yerleşimi · backup/monitoring | **infra-state.md** · docs/ops/`<runbook>`.md |
-| **④ Tasarım** | UI-kod ✅ | İş-başı (G-numaralı) | Görsel/UI parçaları; design-system-guardian guardrail; tasarım-track | docs/design/STATUS.md · `<G-iş>`/brief.md |
+| **① Manager** | Code ❌ / Docs ✅ | Phase/project-long (handed over) | Process owner: splits the phase into parts · refines kickoffs · audits gates · pins decisions | progress.md · issues.md · open-questions.md |
+| **② Development** | Code ✅ | Per-part (fresh) | Codes one part (P-numbered) end to end: spec→plan→impl→test→review→merge | module-specs/`<part>`.md |
+| **③ Ops / DevOps** | Config/scripts ✅, product code ❌ | **PERSISTENT** (cache — ↓) | Manual & infra: server · panel (Dokploy etc.) · domain/DNS · environments · CI/CD infra · secret placement · backup/monitoring | **infra-state.md** · docs/ops/`<runbook>`.md |
+| **④ Design** | UI code ✅ | Per-task (G-numbered) | Visual/UI parts; design-system-guardian guardrail; design track | docs/design/STATUS.md · `<G-task>`/brief.md |
 
-> **Yönetici "kod yazmaz" ≠ boş durur.** Yönetici dokümanların ve sürecin sahibidir: living-docs günceller, kickoff üretir, kararı sabitler, kapıyı denetler.
+> **The Manager "writes no code" ≠ sits idle.** The Manager owns the docs and the process: updates living-docs, produces kickoffs, pins decisions, audits gates.
 
-> **Tasarım karar vericisi = Claude Design** (Claude Code'a **MCP** ile bağlanır). Bu bağlantı için Claude Code'un **terminalden (CLI) kullanımı ZORUNLUDUR** — ④ Tasarım (G) işleri terminal oturumunda yürütülür.
+> **The design decision-maker = Claude Design** (connected to Claude Code via **MCP**). For that connection, running Claude Code **from the terminal (CLI) is MANDATORY** — ④ Design (G) work runs in a terminal session.
 
-### Neden Ops session AYRI — ve "kalıcı"nın gerçek anlamı
-Manuel/altyapı işini yönetici veya geliştirme session'ında yapmak: (a) o session'ın context'ini operasyon gürültüsüyle **doldurur**, (b) geliştirme takibini **kirletir**. Bu yüzden AYRI.
+### Why the Ops session is SEPARATE — and what "persistent" really means
 
-"Kalıcı" ise bir **optimizasyondur, tasarım dayanağı değil**: kaynak her zaman **runbook + infra-state**'tir; session context'i yalnızca ısınmış **cache**'tir (dosyaları yeniden okumama konforu). Kalıcı session compaction'dan defalarca geçer ve özet kaybı sinsidir — bu yüzden iki kural:
+Doing manual/infra work inside the manager or dev session: (a) **floods** that session's context with operational noise, (b) **pollutes** development tracking. Hence SEPARATE.
 
-1. **Anında-runbook:** her önemli neden-kararı (neden bu port, neden bu PAT tipi, hangi env nerede) iş "bitti" sayılmadan runbook'a düşer. Docs'a yazılmamış karar YOK hükmündedir.
-2. **Anti-confabulation:** Ops session "neden X?" sorularına kendi hafızasından değil **runbook'tan** cevap verir; runbook'ta yoksa **"kayıtlı değil"** der — uydurmaz.
+"Persistent" is an **optimization, not a design pillar**: the source of truth is always **runbooks + infra-state**; the session context is only a warmed **cache** (the comfort of not re-reading files). A persistent session goes through compaction many times, and summary loss is insidious — hence two rules:
 
-Bu iki kural sağlandıkça kalıcılık zararsız konfordur; sağlanmıyorsa kalıcı session taze bir session'dan iyi değildir. *(Test: taze bir Ops session runbook'larla aynı işi görebilmeli.)*
+1. **Instant runbook:** every significant why-decision (why this port, why this PAT type, which env lives where) lands in the runbook before the task counts as done. A decision not written into docs DOES NOT EXIST.
+2. **Anti-confabulation:** the Ops session answers "why X?" questions from the **runbook**, not from its own memory; if the runbook does not have it, it says **"not recorded"** — it does not invent.
 
----
-
-## 2. İnsan kapıları (kalitenin bel kemiği)
-
-Her geliştirme parçası bu döngüden geçer:
-
-```
-SPEC yaz              → 🚦 KAPI 1: spec onayı (kod yok — yanlış yönü en ucuz yerde durdurur)
-PLAN (plan mode)      → 🚦 KAPI 2: plan onayı
-IMPL                  → agent akar (vibe); parça branch'inde küçük CHECKPOINT commit'leri (§9)
-TEST (/gate3 kanıtı)  → 🚦 KAPI 3: mekanik kanıt bloğu (test/lint/typecheck) + tarayıcıda/gerçekte dene
-KRİTİK REVIEW         → 🚦 KAPI 4: verifier-subagent + yönetici derin okur (§4.3);
-                         İNSAN bulgu raporunu okur + kritik diff'lere nokta atışı bakar; ONAY İNSANINDIR
-MERGE + docs          → main'e giriş YALNIZ burada (main-guard hook enforce eder — §12) → checkpoint → yeni session
-```
-
-- **KAPI 4 profili track'e göre değişir:** kod-track (para/auth) = ağır (yukarıdaki tam akış); tasarım-track = hafif (para yok, güvenlik-yüzeyi kadar); ops = "birlikte doğrula" (§6).
-- **Kapı-profili parça bazında da esner (kapı-yorgunluğuna baştan önlem):** küçük/düşük-riskli parçada yönetici **KAPI 1+2'yi tek onayda birleştirir** (spec+plan birlikte sunulur); para/auth/veri-kaybı yüzeyinde ASLA birleşmez. Profil, spec'in `kapı-profili` alanına yazılır (module-specs şablonu). *(§15 retro-kalibrasyonu yine geçerli — bu, öngörülebilir kısmın baştan çözümüdür.)*
-- **Faz kapıları** (parça kapılarının üstünde): Faz 0 plan onayı (en büyük) · omurga bitince · her büyük parça bitince.
-
-### 2.1 Mutlu-yol dışı (iptal / geri-dönüş — branch modeli sayesinde ucuz)
-
-- **Parça iptali:** branch terk edilir (silme = yıkıcı → önce sor) · issues/changelog'a tek satır gerekçe · spec'e `İPTAL` işareti · progress güncellenir.
-- **IMPL ortasında plan çürüdü:** sıfırdan başlanmaz — KAPI 2'ye **delta-plan** ile dönülür (ne değişti + neden), onayla devam edilir.
-- **KAPI 4 spec-seviyesi kusur buldu:** düzeltme yaması değil geri-dönüş — KAPI 1'e dönülür, spec düzeltilir; ders retro'ya not düşülür (§15).
+As long as these two rules hold, persistence is harmless comfort; when they do not, a persistent session is no better than a fresh one. *(Test: a fresh Ops session must be able to do the same job from the runbooks alone.)*
 
 ---
 
-## 3. Faz & parça yapısı
+## 2. Human gates (the backbone of quality)
 
-- **Faz 0 = PLANLAMA (kod yok):** yönetici tüm dokümanları üretir → 🚦 en büyük kapı (kararlar burada kilitlenir). Çıktı: living-docs seti + `phase-kickoffs.md` (sonraki fazların taslak komutları).
-- **Faz N:** parçalara bölünür — kod parçaları `P1, P2…` · tasarım `G1, G2…` · ops işleri kendi akışında. **Bölme kuralı:** paralel yürüyecek parçaların **dosya-kapsamları ayrık** tutulur (client/backend gibi); aynı dosyalara dokunanlar paralel değil **sıralı** çalışır — conflict/kod-kaybı riski bölme anında kökten kesilir.
-- Her parça **taze session**'da başlar (context temiz). Yönetici parçanın kickoff'unu rafine eder.
+Every development part goes through this cycle:
+
+```
+Write SPEC            → 🚦 GATE 1: spec approval (no code — stops a wrong direction at the cheapest point)
+PLAN (plan mode)      → 🚦 GATE 2: plan approval
+IMPL                  → the agent flows (vibe); small CHECKPOINT commits on the part branch (§9)
+TEST (/gate3 proof)   → 🚦 GATE 3: mechanical evidence block (test/lint/typecheck) + try it in the browser/for real
+CRITICAL REVIEW       → 🚦 GATE 4: verifier subagent + the Manager reads deep (§4.3);
+                         the HUMAN reads the findings report + spot-checks critical diffs; APPROVAL IS THE HUMAN'S
+MERGE + docs          → the ONLY way into main (enforced by the main-guard hook — §12) → checkpoint → new session
+```
+
+- **The GATE 4 profile varies by track:** code track (money/auth) = heavy (the full flow above); design track = light (no money, only as much as the security surface); ops = "verify together" (§6).
+- **The gate profile also flexes per part (a proactive answer to gate fatigue):** for a small/low-risk part the Manager **combines GATES 1+2 into one approval** (spec+plan presented together); NEVER combined on money/auth/data-loss surfaces. The profile is written into the spec's `gate profile` field (module-specs template). *(The §15 retro calibration still applies — this handles the predictable portion up front.)*
+- **Phase gates** (above the part gates): Phase 0 plan approval (the biggest) · when the backbone is done · when each major part is done.
+
+### 2.1 Off the happy path (cancel / rollback — cheap thanks to the branch model)
+
+- **Part cancelled:** the branch is abandoned (deleting = destructive → ask first) · one line of rationale in issues/changelog · the spec is marked `CANCELLED` · progress updated.
+- **The plan falls apart mid-IMPL:** do not restart from scratch — return to GATE 2 with a **delta plan** (what changed + why), continue on approval.
+- **GATE 4 finds a spec-level flaw:** not a patch but a rollback — return to GATE 1, fix the spec; the lesson is noted for the retro (§15).
 
 ---
 
-## 4. Yönetici döngüsü (çekirdek)
+## 3. Phase & part structure
 
-```
-Loop:  çalışan/ops session taslar/rapor verir
-   →   YÖNETİCİ zemini REPO'DAN doğrular (git+docs), çelişki taşımaz
-   →   YÖNETİCİ sonraki taze-session KICKOFF'unu rafine eder
-   →   sen taze session'da çalıştırırsın
-```
-
-### 4.1 Zemin-doğrulama kuralı (vazgeçilmez)
-Yönetici, kapanan session'ın raporunu **körü körüne ALMAZ.** `git log/status` + ilgili living-docs ile **DOĞRULAR**; rapor ile repo çelişirse çelişkiyi kickoff'a **taşımaz**, kaynağı düzeltir. *(Bu tek kural, "prod adres app. mı apex mi", "port 3000 mü 3100 mü", "artefakt gerçekten yazıldı mı" gibi sessiz sürüklenmeleri yakalar.)*
-
-### 4.2 Kickoff iskeleti (her taze-session prompt'u bu sırayla)
-```
-rol + konum + parça haritası
-→ ÖNCE OKU (kaynak spec = TEK doğruluk; hangi docs)
-→ KİLİTLİ kararlar (değiştirme, sorma)
-→ çalışma kuralları (ağaç/commit/güvenlik/ortam)
-→ iş sırası (alt-adımlar)
-→ spec-kapısı mikro-kararları (VARSAYMA; ürün kararı → kullanıcıya sor)
-→ KAPI 3/4 somut kabul listeleri
-→ döngü + session hijyeni
-→ İLK ADIM (kod/artefakt öncesi ne yapılacak)
-```
-
-### 4.3 Kapı-onay disiplini (KAPI 4 gibi kritik anlarda)
-Yönetici iddiaları koddan doğrular — ama **kendi context'ine dosya okuyarak DEĞİL**: doğrulamayı salt-okur bir **verifier-subagent**'a delege eder (dosyaları okur, gerekirse testi bağımsız koşturur), yöneticiye yalnız **kompakt hüküm + kanıt** döner. Sonra kullanıcıya **"session'a yapıştırılacak onay metni"** bloğu verilir — karar tek yerde, tutarlı ilerler.
-
-- **Neden subagent:** yönetici context'i uzun ömürlü ve değerlidir. Okunan dosyalar kalıntı bırakır → (a) context erken dolar → erken devir; (b) **bayat kod hafızası**: P7'de okunan dosya P9'da değişmiştir, yönetici "kodu bildiğini" sanarak eski zemin üstünden hüküm verir. Zemin-doğrulamanın (§4.1) doğal uzantısı: **yöneticinin kendi kod hafızası da güvenilmez kaynaktır** — her hüküm taze okumayla verilir. *(Bonus: aynı güçlü model temiz context'le, kendi kalıntısı arasından okuduğundan daha isabetli yakalar.)*
-- **Sınır (kısıtlama değil):** delegasyon yalnız **doğrulama okumaları** içindir — girdisi baştan tanımlı, çıktısı tek rapor, ortasında ürün kararı olmayan işler. **Geliştirme işi subagent'a taşınmaz:** interaktif dev session'ları (kullanıcının izlediği, dikte edebildiği) geliştirme birimi olarak kalır; bulgudan çıkan düzeltmeler yine dev session'lara gider.
+- **Phase 0 = PLANNING (no code):** the Manager produces all docs → 🚦 the biggest gate (decisions lock here). Output: the living-docs set + `phase-kickoffs.md` (draft commands for later phases).
+- **Phase N:** split into parts — code parts `P1, P2…` · design `G1, G2…` · ops work in its own flow. **Partitioning rule:** parts that will run in parallel must have **disjoint file scopes** (client/backend etc.); parts touching the same files run sequentially, not in parallel — the conflict/code-loss risk is cut at partitioning time.
+- Every part starts in a **fresh session** (clean context). The Manager refines the part's kickoff.
 
 ---
 
-## 5. Ops / DevOps session (manuel & altyapı)
+## 4. The Manager loop (the core)
 
-**Kapsam:** sunucu provizyon · panel kurulumu (Dokploy/Coolify/…) · domain & DNS · ortam açma (staging/prod) · CI/CD altyapısı · registry/secret yerleşimi · backup + monitoring kurulumu · her "kod-dışı, elle yapılan" iş.
-
-**Kalıcılık:** bir optimizasyon — kaynak runbook'tur, context cache'tir; **anında-runbook + anti-confabulation** kuralları geçerli (§1). Context dolunca **infra-state + runbook'larla devrolur** (aynı hijyen).
-
-**Living-doc'ları:**
-- `infra-state.md` — **pano**: kurulu altyapının ŞU ANKİ gerçeği (sunucu, ortamlar, domainler, servisler, portlar, "hangi secret nerede"). state doküman = EDIT, küçük kalır. Yönetici/geliştirme **okur**, Ops **yazar**.
-- `docs/ops/<runbook>.md` — adım-adım kalıcı talimatlar + **neden-kararları** (ör. "port 23 çünkü…", "classic PAT çünkü fine-grained X'te patladı").
-
-**Senkron (living-docs üzerinden):**
 ```
-Geliştirme/Yönetici  → NEEDS-FROM-USER.md ("şu altyapı/ortam/secret gerekli") → DURAKSA
-Ops session          → kurar + infra-state.md + runbook günceller
-Herkes               → infra-state.md'yi okuyarak gerçeği bilir (varsaymaz)
+Loop:  a working/ops session drafts/reports
+   →   the MANAGER verifies the ground against the REPO (git+docs), carries no contradictions
+   →   the MANAGER refines the next fresh-session KICKOFF
+   →   you run it in a fresh session
 ```
 
-**Güvenlik:** secret koda/repo'ya asla; `.env`/panel'de. guard-env hook Ops session'da da geçerli.
+### 4.1 The ground-truth verification rule (non-negotiable)
+
+The Manager does NOT take a closing session's report **on faith.** It **VERIFIES** with `git log/status` + the relevant living-docs; if the report and the repo contradict, the contradiction is **not carried** into the kickoff — the source gets fixed. *(This single rule catches silent drifts like "is prod at app. or apex", "port 3000 or 3100", "was the artifact actually written".)*
+
+### 4.2 The kickoff skeleton (every fresh-session prompt, in this order)
+
+```
+role + location + part map
+→ READ FIRST (source spec = the single source of truth; which docs)
+→ LOCKED decisions (do not change, do not re-ask)
+→ working rules (tree/commits/security/environment)
+→ order of work (sub-steps)
+→ spec-gate micro-decisions (DO NOT ASSUME; product decision → ask the user)
+→ concrete GATE 3/4 acceptance lists
+→ loop + session hygiene
+→ FIRST STEP (what happens before any code/artifacts)
+```
+
+### 4.3 Gate-approval discipline (at critical moments like GATE 4)
+
+The Manager verifies claims from the code — but **NOT by reading files into its own context**: verification is delegated to a read-only **verifier subagent** (it reads the files, runs the tests independently if needed) and returns only a **compact verdict + evidence** to the Manager. Then the user receives an **"approval text to paste into the session"** block — the decision lives in one place and proceeds consistently.
+
+- **Why a subagent:** the Manager's context is long-lived and precious. Files read leave residue → (a) the context fills early → early handover; (b) **stale code memory**: a file read during P7 has changed by P9, and the Manager rules on old ground while believing it "knows the code". The natural extension of ground-truth verification (§4.1): **the Manager's own code memory is also an unreliable source** — every verdict comes from a fresh read. *(Bonus: the same strong model with a clean context catches more than it does reading through its own residue.)*
+- **The boundary (a definition, not a limitation):** delegation is only for **verification reads** — tasks with a fully defined input, a single report as output, and no product decision in the middle. **Development work is not moved into subagents:** interactive dev sessions (which the user watches and can dictate to) remain the unit of development; fixes arising from findings go back to dev sessions. *(The solo profile deliberately inverts this trade — §17.)*
 
 ---
 
-## 6. El-ele protokol (artefakt ↔ kurulum köprüsü)
+## 5. The Ops / DevOps session (manual & infra)
 
-Deploy/infra işi tek session'ın tek başına "bitirdim" diyebileceği bir şey değildir:
+**Scope:** server provisioning · panel setup (Dokploy/Coolify/…) · domain & DNS · opening environments (staging/prod) · CI/CD infrastructure · registry/secret placement · backup + monitoring setup · every "non-code, done-by-hand" task.
+
+**Persistence:** an optimization — the source is the runbook, the context is a cache; the **instant-runbook + anti-confabulation** rules apply (§1). When the context fills, it **hands over via infra-state + runbooks** (same hygiene).
+
+**Its living-docs:**
+- `infra-state.md` — **the board**: the CURRENT truth of the installed infrastructure (server, environments, domains, services, ports, "which secret lives where"). A state doc = EDIT, stays small. Manager/dev **read**, Ops **writes**.
+- `docs/ops/<runbook>.md` — step-by-step durable instructions + **why-decisions** (e.g. "port 23 because…", "classic PAT because fine-grained broke on X").
+
+**Sync (through the living-docs):**
 ```
-② Geliştirme session:  ARTEFAKT yazar (Dockerfile · CI workflow · deploy config) + LOKAL doğrular
-③ Ops session (sen):   artefaktı altyapıya UYGULAR (panel/creds/deploy) + infra-state günceller
-Birlikte:              gerçek ortamda DOĞRULAR (smoke/restore-test); "deploy edildi"yi AI tek başına diyemez
+Dev/Manager   → NEEDS-FROM-USER.md ("this infra/env/secret is needed") → STOP
+Ops session   → sets it up + updates infra-state.md + the runbook
+Everyone      → reads infra-state.md and knows the truth (nobody assumes)
 ```
-Yönetici bu köprüyü koordine eder (hangi artefakt hazır, hangi ops adımı bekliyor).
+
+**Security:** secrets never in code/repo; in `.env`/panel. The guard-env hook applies in the Ops session too.
 
 ---
 
-## 7. Living-docs sistemi (süreç bununla yaşar)
+## 6. The hand-in-hand protocol (artifact ↔ installation bridge)
 
-**İki sınıf:**
-- **STATE** (progress · issues · architecture · data-model · infra-state · specs) → **EDIT**, küçük kalır, "şu anki gerçek".
-- **ARŞİV** (docs/archive/*) → **APPEND**, büyür, **asla otomatik yüklenmez** (yalnız talep üzerine).
+Deploy/infra work is not something one session can declare "done" alone:
+```
+② Dev session:   writes the ARTIFACT (Dockerfile · CI workflow · deploy config) + verifies LOCALLY
+③ Ops session:   APPLIES the artifact to the infrastructure (panel/creds/deploy) + updates infra-state
+Together:        VERIFY in the real environment (smoke/restore test); AI alone never declares "deployed"
+```
+The Manager coordinates this bridge (which artifact is ready, which ops step is waiting).
 
-**Manifesto:**
+---
 
-| Doküman | Amaç | Yaşam | Yüklenme |
+## 7. The living-docs system (the process lives on this)
+
+**Two classes:**
+- **STATE** (progress · issues · architecture · data-model · infra-state · specs) → **EDIT**, stays small, "the current truth".
+- **ARCHIVE** (docs/archive/*) → **APPEND**, grows, **never auto-loaded** (on request only).
+
+**The manifest:**
+
+| Doc | Purpose | Life | Loading |
 |---|---|---|---|
-| `CLAUDE.md` | konvansiyon + doküman haritası + kritik kurallar (LEAN) | Edit | otomatik, her session |
-| `progress.md` | durum panosu (log DEĞİL) | Edit | session başı |
-| `issues.md` | yalnız AÇIK maddeler | Edit (çözülen silinir) | session başı |
-| `architecture.md` · `data-model.md` | stack + sistem + şema | Edit | ilgili işte |
-| `infra-state.md` | kurulu altyapı gerçeği | Edit | ops/deploy işinde |
-| `module-specs/*` | parça başına spec | Edit (kilitlenince stabil) | o parçada |
-| `open-questions.md` · `NEEDS-FROM-USER.md` | açık kararlar · gereken key/hesap | Edit | ihtiyaç çıkınca |
-| `phase-kickoffs.md` | sonraki faz taslak komutları | Edit | faz geçişinde |
-| `workflow.md` / bu playbook | metodoloji (başında: "← playbook vN") | Edit (nadir) | referans |
-| `docs/archive/*` · `docs/ops/*` · `docs/design/*` | geçmiş · runbook · tasarım | Append | **talep üzerine** |
+| `CLAUDE.md` | conventions + doc map + critical rules (LEAN) | Edit | automatic, every session |
+| `progress.md` | status board (NOT a log) | Edit | session start |
+| `issues.md` | OPEN items only | Edit (resolved → deleted) | session start |
+| `architecture.md` · `data-model.md` | stack + system + schema | Edit | for relevant work |
+| `infra-state.md` | the truth of installed infra | Edit | ops/deploy work |
+| `module-specs/*` | one spec per part | Edit (stable once locked) | for that part |
+| `open-questions.md` · `NEEDS-FROM-USER.md` | open decisions · needed keys/accounts | Edit | as needs arise |
+| `phase-kickoffs.md` | draft commands for later phases | Edit | at phase transitions |
+| `workflow.md` / this playbook | methodology (headed: "← playbook vN") | Edit (rare) | reference |
+| `docs/archive/*` · `docs/ops/*` · `docs/design/*` | history · runbooks · design | Append | **on request** |
 
-**Rotasyon:** issues çözülünce → changelog tek satır · progress'te tamamlanan faz tek satıra iner · her faz sonu `phase-N-summary.md` · **bloat-budget** ~150–200 satır → proaktif buda + bildir.
+**Rotation:** issue resolved → one line in the changelog · a completed phase collapses to one line in progress · each phase end → `phase-N-summary.md` · **bloat budget** ~150–200 lines → prune proactively + notify.
 
-**Altın kural:** yapısal karar/değişiklik **inline söyleyip geçilmez** — ilgili spec/issues/architecture'a **işlenir** (session sınırını aşsın). Sadece o anki ekranı etkiliyorsa → söyle; bir dokümandaki kararı değiştiriyorsa → dokümanı güncellet.
-
----
-
-## 8. NEEDS · open-questions · karar-zamanlaması
-
-- **NEEDS-FROM-USER:** AI bir key/hesap/manuel-iş'e ihtiyaç duyunca yazar + **DURAKSA**; sen sağlayınca "karşılandı" işaretlenir.
-- **open-questions:** yönetici karar veremediğinde. **VARSAYMA →** buraya. Ürün kararları kullanıcıya, teknik kararları gerekçeyle yönetici.
-- **Karar-zamanlaması (bağımlılık):** bazı kararlar **ölçüme/önceki adıma bağlıdır** — "önce ölç, sonra karar ver, **sıra zorunlu**". Erken karar = zarar/borç. Bağımlı kararlar open-questions'ta **sıralı bağlı-çift** olarak izlenir.
+**The golden rule:** a structural decision/change is **never just said inline** — it is **written into** the relevant spec/issues/architecture (it must outlive the session boundary). If it only affects the current screen → say it; if it changes a decision recorded in a doc → have the doc updated.
 
 ---
 
-## 9. Çalışma anlaşmaları (kalıcı davranış sözleşmesi)
+## 8. NEEDS · open-questions · decision timing
 
-Memory + CLAUDE.md'de tutulan, session'lar-arası tutarlılığı sağlayan kurallar. Projeye göre uyarlanır; tipik çekirdek:
-
-- **Commit disiplini (branch + checkpoint):** parça kendi branch'inde akar (`wip/P-N`, `feat/…` — main'de doğrudan iş YOK). Küçük **checkpoint commit'leri serbest ve teşviklidir** — kayıp penceresi (crash · yanlış tool çağrısı · kas-hafızası refleksi) hiç açılmaz. **Değişmez kural: main'e KAPI 4'süz hiçbir şey girmez.** Review diff'i tek komut: `git diff main...<branch>`. İstenirse KAPI 4 sonrası history squash/curate edilir (yalnız o branch'te, önceden izinli).
-- **Git güvenliği:** uncommitted iş varken **`git restore/stash/clean/checkout --` ASLA**; yıkıcı işlem (force/reset/branch-sil) için önce sor. *(Checkpoint disiplini bu riski zaten küçültür.)*
-- **Hook > talimat:** enforce edilebilen hijyen kuralı modele talimatla değil **harness hook'uyla** uygulanır (guard-env = secret · **main-guard = main'de kod-commit + KAPI4-işaretsiz merge bloğu** · PreCompact = devir-durumu). Talimat unutulur/atlanır; hook unutmaz. Genel ilke: **enforce edilebilen invariant hook'a, otomatikleştirilebilen kanıt script'e** (/gate3) — insan dikkati yalnız gerçek muhakemeye.
-- **Secret hijyeni:** `.env` okunmaz/yazdırılmaz (**PreToolUse guard hook** enforce eder); koda gömülmez. **Sızıntı-protokolü (kullanıcı-taraflı sızıntı):** kullanıcı chat'e hassas değer yapıştırırsa (DB URL, API key…) — değer TEKRAR EDİLMEZ, hiçbir dosyaya/doc'a/komuta yazılmaz; bir yere yazıldıysa DERHAL silinir; kullanıcıya bildirilir + **rotasyon önerilir** *(dürüst sınır: chat geçmişinden gerçek silme yoktur — tek kalıcı çözüm rotasyon)*; doğru yer `.env`/panel'dir, değeri insan koyar. **secret-scan hook'u** (UserPromptSubmit, §12) tam bu anda modele protokolü hatırlatır — bloklamaz, dürter.
-- **Anti-confabulation (genel):** §1'deki kural yalnız Ops'un değildir — compaction geçirmiş **her** session için geçerli: "neden X?" cevabı docs'tan verilir; docs'ta yoksa **"kayıtlı değil"** — uydurulmaz.
-- **Bağlam-disiplini (soru ≠ durum raporu):** faz yürürken kullanıcının sorusuna **istenen kısa cevap** verilir — her soruda fazın tüm iş akışını/durumunu yeniden dökmek context'i şişirir, okumayı öldürür. Tam durum özeti yalnız istendiğinde ya da kapı anlarında.
-- **Working-tree izolasyonu (paralel session):** git'te working tree TEKTİR — aynı dizinde iki session iki branch'te "aynı anda" çalışamaz; biri diğerinin işini ezer/karıştırır (conflict + kod kaybı). Kural: aynı dizinde aynı anda **tek aktif geliştirme session'ı**; paralel parçalar **ayrı `git worktree`**'de (`git worktree add ../<proje>-<parça> wip/<parça>`, merge sonrası remove); branch değişiminden önce checkpoint commit. Kapsam ayrıklığı §3'te bölme anında sağlanır; /new-part paralellik kontrolü yapar.
-- **Test:** dış-servis/LLM çağrıları **mock-first** (deterministik + ücretsiz); gerçek çağrı yalnız kontrollü ölçüm script'i.
-- **Ortam kuralları:** projeye özel footgun'lar (portlar, sürüm pinleri, "şu komut şu path'te") — spec/memory'de.
-- **Dil kuralı (İngilizce docs):** chat dili kullanıcıya uyar (Türkçe serbest) — ama **TÜM dokümantasyon** (living-docs, spec'ler, runbook'lar, commit mesajları, kod yorumları) **İNGİLİZCE** yazılır. Gerekçe: daha az token (Türkçe belirgin biçimde daha pahalı tokenize olur) · modelin İngilizce talimat-takibi daha güçlü · session'lar arası tutarlı terminoloji. Template bu yüzden baştan sona İngilizce'dir; kural CLAUDE.md 11'de enforce edilir.
+- **NEEDS-FROM-USER:** when the AI needs a key/account/manual step it writes it down + **STOPS**; when you provide it, it is marked "fulfilled".
+- **open-questions:** when the Manager cannot decide. **DO NOT ASSUME →** it goes here. Product decisions go to the user; technical decisions to the Manager, with rationale.
+- **Decision timing (dependency):** some decisions **depend on a measurement/previous step** — "measure first, then decide; the **order is mandatory**". An early decision = damage/debt. Dependent decisions are tracked in open-questions as an **ordered dependent pair**.
 
 ---
 
-## 10. Session hijyeni & devir
+## 9. Working agreements (the durable behavior contract)
 
-- **Tetik = kalite + doğal sınır, sabit token sayısı DEĞİL.** Taze session, compaction geçirmiş session'dan daha kalitelidir — devir bunun için yapılır. Context bütçesi modele göre değişir (200k vs 1M); **teknik kapasite varken tutarlı bir birimi aynı session'da BİTİRMEK serbesttir** — yarım işi devretmek çoğu zaman daha pahalıdır. Doğal sınırda öneri: *"Bu birim bitti / kalite düşmeye başladı. Yeni session öneriyorum; docs güncel. Onaylıyor musun?"*
-- **Emniyet ağı (OPSİYONEL, zorlayıcı değil):** model kendi kalan context'ini içgözlemle BİLEMEZ — "agent doluluğu fark etsin" güvenilmezdir; güvenilir takip insan + harness'tadır. İsteyen proje **PreCompact hook** kurar (**proje başında, isteğe göre** — varsayılan kurulum listesinde değil): compaction tetiklenmeden önce koşar → devir-durumunun living-docs'a yazılmasını güvenceler + kullanıcıya haber verir. **Devir dayatmaz** — compaction sonrası aynı session'da devam edilebilir. Hook kurulmayan projede aynı hijyen insan takibiyle yürür *(statusline'da context% yardımcı)*.
-- **Devir kanalları:** çalışan/ops → **durum raporu** + güncel living-docs. Yönetici → **devir-prompt** + memory + living-docs.
-- **Devir-testi (Ops testinin yönetici simetriği):** devir-prompt'ta living-docs'ta olmayan bilgi varsa bu, prompt'un zenginliği değil **docs'un açığıdır** — prompt değil doc düzeltilir. Devir-prompt kaynağa değil konfora hizmet eder; kaynak her zaman living-docs'tur.
-- İdeal granülerlik: parça-başına bir session; büyük parçada alt-adım başına.
+Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. Adapted per project; the typical core:
+
+- **Commit discipline (branch + checkpoint):** a part flows on its own branch (`wip/P-N`, `feat/…` — NO direct work on main). Small **checkpoint commits are free and encouraged** — the loss window (crash · wrong tool call · muscle-memory reflex) never opens. **The invariant: nothing enters main without GATE 4.** The review diff is one command: `git diff main...<branch>`. Optionally the history is squashed/curated after GATE 4 (only on that branch, with prior permission).
+- **Git safety:** with uncommitted work, **`git restore/stash/clean/checkout --` NEVER**; ask first for destructive ops (force/reset/branch delete). *(Checkpoint discipline already shrinks this risk.)*
+- **Hook > instruction:** any hygiene rule that can be enforced is applied via a **harness hook**, not a model instruction (guard-env = secrets · **main-guard = blocks code commits on main + GATE4-unmarked merges** · PreCompact = handover state). Instructions get forgotten/skipped; hooks do not. The general principle: **every enforceable invariant goes into a hook, every automatable proof into a script** (/gate3) — human attention is reserved for real judgment.
+- **Secret hygiene:** `.env` is never read/printed (**PreToolUse guard hook** enforces it — in every form: direct read, subcommand, glob, script; only `.env.example` is accessible); never hardcoded. On a guard-env block: STOP — report to the user and wait for approval; never retry via another path. **The leak protocol (user-side leaks):** if the user pastes a sensitive value into chat (DB URL, API key…) — the value is NOT repeated, not written into any file/doc/command; if it landed anywhere it is deleted IMMEDIATELY; the user is notified + **rotation is recommended** *(the honest limit: chat history cannot be truly deleted — the only permanent fix is rotation)*; the right place is `.env`/panel, and the human places it. The **secret-scan hook** (UserPromptSubmit, §12) reminds the model of the protocol at exactly that moment — it does not block, it nudges.
+- **Anti-confabulation (general):** the rule in §1 is not only for Ops — it applies to **every** session that has been through compaction: "why X?" is answered from the docs; if the docs do not have it, **"not recorded"** — nothing is invented.
+- **Context discipline (a question ≠ a status report):** while a phase is running, the user's question gets **the short answer requested** — re-dumping the whole phase workflow/status with every question bloats the context and kills readability. The full status summary only when asked or at gates.
+- **Working-tree isolation (parallel sessions):** in git the working tree is ONE — two sessions in the same directory cannot work on two branches "at the same time"; one crushes/pollutes the other's work (conflicts + code loss). The rule: one active dev session per directory at a time; **parallel parts in separate `git worktree`s** (`git worktree add ../<project>-<part> wip/<part>`, removed after merge); checkpoint commit before any branch switch. Scope disjointness is ensured at partitioning time (§3); /new-part runs a parallelism check.
+- **Tests:** external-service/LLM calls are **mock-first** (deterministic + free); real calls only via a controlled measurement script.
+- **Environment rules:** project-specific footguns (ports, version pins, "this command runs from this path") — in the spec/memory.
+- **The language rule (English docs):** chat language follows the user (any language is fine) — but **ALL documentation** (living-docs, specs, runbooks, commit messages, code comments) is written in **ENGLISH**. Rationale: fewer tokens (Turkish tokenizes measurably more expensively) · the model follows English instructions more reliably · consistent terminology across sessions. The templates are English end to end; the rule is enforced as CLAUDE.md rule 11. *(Since v6 the canonical repo itself — playbook, changelog, README — is English too.)*
 
 ---
 
-## 11. Memory (davranış kalıcılığı)
+## 10. Session hygiene & handover
 
-- **`manager-session-pattern`** (memory): yönetici rolünün çalışma şekli — kickoff iskeleti, zemin-doğrulama, kapı-onay disiplini, çalışma anlaşmaları, devir kuralı. İlk yönetici session içeriği `memory-seed/`den kaydeder (STARTGUIDE); sonraki yönetici session'lara kesintisiz taşınır.
-- **Mekanizma-notu (beklentiyi doğru kur):** memory **proje-dizinine bağlı ve rol-körüdür** — projedeki *her* session aynı index'i görür; "yönetici yükler" bir seçicilik değil, içeriğin yönetici-davranışı olmasındandır. Rol seçiciliği memory'yle değil **kickoff'la** sağlanır.
-- Memory = repo'nun kaydetMEDİĞİ **davranış/tercih** bilgisi. Proje durumu repo'da; davranış memory'de. İkisi çakışmaz.
+- **The trigger = quality + a natural boundary, NOT a fixed token count.** A fresh session is higher quality than a compacted one — that is what handover is for. The context budget varies by model (200k vs 1M); **while technical capacity remains, finishing a coherent unit in the same session is allowed** — handing over half-done work usually costs more. At the natural boundary, the suggestion: *"This unit is done / quality is starting to degrade. I suggest a new session; the docs are current. Approve?"*
+- **The safety net (OPTIONAL, not coercive):** the model CANNOT introspect its remaining context — "let the agent notice fullness" is unreliable; reliable tracking lives with the human + the harness. A project that wants it installs the **PreCompact hook** (**at project start, by choice** — not in the default setup): it runs before compaction fires → secures the handover state into the living-docs + notifies the user. It **does not force a handover** — after compaction the same session may continue. Projects without the hook run the same hygiene through human tracking *(the context% in the statusline helps)*.
+- **Handover channels:** worker/ops → a **status report** + current living-docs. The Manager → a **handover prompt** + memory + living-docs.
+- **The handover test (the Manager's symmetric of the Ops test):** if the handover prompt contains information that is not in the living-docs, that is not the prompt's richness — it is **a docs gap**; the doc gets fixed, not the prompt. The handover prompt serves comfort, not truth; the source is always the living-docs.
+- Ideal granularity: one session per part; for a big part, one per sub-step.
 
 ---
 
-## 12. `.claude/` yapısı (baştan solid)
+## 11. Memory (behavior durability)
+
+- **`manager-session-pattern`** (memory): how the Manager role works — the kickoff skeleton, ground-truth verification, gate-approval discipline, working agreements, the handover rule. The first Manager session saves it from `memory-seed/` (STARTGUIDE); it carries to later Manager sessions without interruption.
+- **Mechanism note (set expectations right):** memory is **bound to the project directory and is role-blind** — *every* session in the project sees the same index; "the Manager loads it" is not selectivity, it is because the content happens to be Manager behavior. Role selectivity comes from the **kickoff**, not from memory.
+- Memory = the **behavior/preference** information the repo does NOT record. Project state lives in the repo; behavior lives in memory. The two do not overlap.
+
+---
+
+## 12. The `.claude/` structure (solid from day one)
 
 ```
 .claude/
-├─ settings.json       # permissions: allow (güvenli read/build/test) · ask (commit/merge/push/checkout…) ·
-│                      #   deny (.env oku, rm -rf, force-push, git clean) + hook kayıtları
+├─ settings.json       # permissions: allow (safe read/build/test) · ask (commit/merge/push/checkout…) ·
+│                      #   deny (.env reads, rm -rf, force-push, git clean) + hook registrations
 ├─ hooks/
-│  ├─ guard-env.sh     # PreToolUse: secret dosya (.env*) erişimini fiziksel engelle (.env.example serbest)
-│  ├─ secret-scan.sh   # UserPromptSubmit: kullanıcı mesajında secret sezilirse sızıntı-protokolünü hatırlat (§9)
-│  ├─ main-guard.sh    # PreToolUse(Bash): main'de KOD commit'i + KAPI4-işaretsiz merge'i fiziksel blokla
-│  │                   #   (docs-only commit main'de serbest · işaret: insan onayı → .claude/.gate4-ok)
-│  └─ pre-compact.sh   # (OPSİYONEL — proje başında isteğe göre) PreCompact: zemin fotoğrafı + bildirim (§10)
-├─ agents/             # verifier (KAPI 4, §4.3) — ASGARİ set; spec-writer/test-writer/design-guardian
-│                      #   ancak yük taşıdığı kanıtlanırsa eklenir (her agent taşınan bakım yüküdür)
-└─ commands/           # /spec · /plan · /checkpoint · /gate3 (KAPI 3 mekanik kanıt) · /review · /new-part
+│  ├─ guard-env.sh     # PreToolUse: physically blocks secret-file (.env*) access in every form —
+│  │                   #   direct paths, subcommands, globs (.env*), case variants (.ENV), Grep globs
+│  │                   #   (.env.example stays fully allowed)
+│  ├─ secret-scan.sh   # UserPromptSubmit: if the user message smells like a secret, reminds the leak protocol (§9)
+│  ├─ main-guard.sh    # PreToolUse(Bash): physically blocks CODE commits on main + GATE4-unmarked merges
+│  │                   #   (docs-only commits on main allowed · marker: human approval → .claude/.gate4-ok)
+│  └─ pre-compact.sh   # (OPTIONAL — by choice at project start) PreCompact: ground snapshot + notification (§10)
+├─ agents/             # verifier (GATE 4, §4.3) — the MINIMAL set; spec-writer/test-writer/design-guardian
+│                      #   are added only once proven load-bearing (every agent is carried maintenance)
+└─ commands/           # /spec · /plan · /checkpoint · /gate3 (GATE 3 mechanical proof) · /review · /new-part
 ```
 
 ---
 
-## 13. Track'ler (paralel, farklı kapı profili)
+## 13. Tracks (parallel, different gate profiles)
 
-| Track | Numara | Ağır kapı | Not |
+| Track | Numbering | Heavy gate | Note |
 |---|---|---|---|
-| **Kod** | P1, P2… | KAPI 4 (para/auth) | branch + checkpoint commit (§9); main'e KAPI 4'süz giriş YOK |
-| **Tasarım** | G1, G2… | KAPI 3 (görsel/tarayıcı) | karar verici: **Claude Design** (MCP; Claude Code **terminal zorunlu**) · guardian guardrail; docs/design/ + STATUS |
-| **Ops** | (ad-hoc) | "birlikte doğrula" | kalıcı(cache) session; infra-state + runbook |
+| **Code** | P1, P2… | GATE 4 (money/auth) | branch + checkpoint commits (§9); NO entry into main without GATE 4 |
+| **Design** | G1, G2… | GATE 3 (visual/browser) | decision-maker: **Claude Design** (MCP; Claude Code **terminal mandatory**) · guardian guardrail; docs/design/ + STATUS |
+| **Ops** | (ad-hoc) | "verify together" | persistent(cache) session; infra-state + runbooks |
 
 ---
 
-## 14. Base-project iskeleti (kopyala-kullan) — orchestrated profil
+## 14. The base-project skeleton (copy & use) — orchestrated profile
 
-> Bu bölüm **orchestrated** (çok-session) profili anlatır; **solo** (tek-session + subagent) varyantı için → §17 / [`template-solo/`](template-solo/).
+> This section describes the **orchestrated** (multi-session) profile; for the **solo** (one session + subagents) variant → §17 / [`template-solo/`](template-solo/).
 
-> **v3'ten itibaren bu iskelet [`template/`](template/) olarak MATERIALIZE edilmiştir** — yeni proje = `template/` içeriğini kopyala + [`STARTGUIDE.md`](template/STARTGUIDE.md)'yi izle. Gerekçe: prose'dan her bootstrap bir yeniden-yorumlamaydı ve drift daha doğumda başlıyordu; gerçek dosyalar tek doğruluktur, iskelet değişiklikleri de sürümlenir (§15). `workflow.md` playbook'un **normatif özetidir** (yalnız kural; gerekçeler burada kalır) — bu sayede playbook yeniden yapılandırılmadan çekirdek/rationale ayrımı kendiliğinden oluşur. **Dil: template'in tamamı İNGİLİZCE'dir** (§9 dil kuralı — agent context'ine giren her şey İngilizce; bu playbook insan-rationale dokümanı olarak Türkçe kalır).
+> **Since v3 this skeleton is MATERIALIZED as [`template/`](template/) in the canonical repo** — a new project = copy the contents of `template/` (or `npx vibe-playbook init orchestrated`) + follow [`STARTGUIDE.md`](template/STARTGUIDE.md). Rationale: every bootstrap from prose was a re-interpretation and drift started at birth; real files are the single source of truth, and skeleton changes are versioned too (§15). `workflow.md` is the playbook's **normative summary** (rules only; the rationale stays here) — so the kernel/rationale split emerged without restructuring the playbook. **Language: everything is ENGLISH** (§9 language rule — everything that enters an agent's context is English).
 
 ```
-template/  →  <yeni-repo>/
-├─ STARTGUIDE.md          # insan: kurulum adımları + Faz 0 kickoff komutu + opsiyon anahtarları
-├─ workflow.md            # playbook'un NORMATİF özeti (başında: "← playbook vN"; sonunda "Proje sapmaları")
-├─ CLAUDE.md              # LEAN: doküman haritası + 11 kritik kural (otomatik yüklenir)
-├─ progress.md · issues.md            # state panoları (boş başlar; session başı yüklenir)
-├─ open-questions.md · NEEDS-FROM-USER.md · .env.example · .gitignore
-├─ PRD.md · architecture.md · data-model.md      # plan-track (Faz 0'da dolar)
-├─ infra-state.md         # Ops session panosu (altyapı gerçeği)
-├─ module-specs/_TEMPLATE.md          # spec şablonu (kapı-profili alanı dahil — §2)
+template/  →  <new-repo>/
+├─ STARTGUIDE.md          # human: setup steps + the Phase 0 kickoff command + option switches
+├─ workflow.md            # the playbook's NORMATIVE summary (headed "← playbook vN"; ends with "Project deviations")
+├─ CLAUDE.md              # LEAN: doc map + 11 critical rules (auto-loaded)
+├─ progress.md · issues.md            # state boards (start empty; loaded at session start)
+├─ open-questions.md · NEEDS-FROM-USER.md · .env.example · gitignore (→ .gitignore at init)
+├─ PRD.md · architecture.md · data-model.md      # the plan track (filled during Phase 0)
+├─ infra-state.md         # the Ops session board (infra truth)
+├─ module-specs/_TEMPLATE.md          # the spec template (incl. the gate-profile field — §2)
 ├─ phase-kickoffs.md
 ├─ docs/
-│  ├─ archive/changelog.md            # + faz sonlarında phase-N-summary.md
-│  ├─ ops/_TEMPLATE-runbook.md        # adımlar + neden-kararları bölümü (anti-confabulation kaynağı)
-│  └─ design/{STATUS.md, design-system-notes.md}   # opsiyonel (kullanılmıyorsa silinir)
-├─ .claude/               # §12'deki yapı — hook'lar test edilmiş çalışır dosyalar
-└─ memory-seed/manager-session-pattern.md   # ilk yönetici session memory'sine kaydeder (STARTGUIDE §3)
+│  ├─ archive/changelog.md            # + phase-N-summary.md at phase ends
+│  ├─ ops/_TEMPLATE-runbook.md        # steps + a why-decisions section (the anti-confabulation source)
+│  └─ design/{STATUS.md, design-system-notes.md}   # optional (delete if unused)
+├─ .claude/               # the §12 structure — hooks are tested, working files
+└─ memory-seed/manager-session-pattern.md   # the first Manager session saves it to memory (STARTGUIDE §3)
 ```
 
-**Genelleştirme:** projeye özel her şeyi (domain, stack, iş kuralları) Faz 0'da doldur. **Domain-bağımsız çekirdek:** 4 session tipi · insan kapıları · track'ler · living-docs lifecycle · el-ele · kickoff iskeleti · çalışma anlaşmaları · memory.
+**Generalization:** fill in everything project-specific (domain, stack, business rules) during Phase 0. **The domain-independent core:** 4 session types · human gates · tracks · the living-docs lifecycle · hand-in-hand · the kickoff skeleton · working agreements · memory.
 
 ---
 
-## 15. Playbook'un kendi yaşam döngüsü (meta-öğrenme)
+## 15. The playbook's own lifecycle (meta-learning)
 
-Playbook da koddur — **versiyonlu süreç-kodu** ("prompts/ koddur" ile aynı muamele). Living-docs projenin *kendisi* hakkında öğrenir; bu bölüm **metodolojinin** öğrenmesini kurar. Kanal kurulmazsa fork-drift kaçınılmaz: her projenin workflow.md'si başka yöne sürüklenir, dersler base'e geri akmaz, sonraki proje eski şablondan başlar.
+The playbook is code too — **versioned process-code** (the same treatment as "prompts/ are code"). Living-docs learn about the project *itself*; this section sets up the **methodology's** learning. Without this channel, fork-drift is inevitable: every project's workflow.md drifts in its own direction, lessons never flow back to base, and the next project starts from a stale template.
 
-- **Kanonik ev:** bu repo. Tek doğruluk buradadır; scratchpad/proje kopyaları türevdir.
-- **Versiyon + changelog:** her anlamlı değişiklik sürüm + CHANGELOG satırı alır. Proje kopyasının başına **"← playbook vN"** yazılır → hangi projenin hangi sürümden türediği görünür.
-- **Faz-retro (yönetici sorar, ~5 dk, faz kapanışında):**
-  1. Hangi kapı **gerçek** bir şey yakaladı?
-  2. Hangi kapıyı **okumadan/özetten** onayladın?
-  3. Hangi kural **ihlal/bypass** edildi — ve neden?
-  Cevaplar etiketlenir: **PROJE** (o projenin workflow/spec'ine işlenir) · **PLAYBOOK** (base'e changelog adayı).
-- **Kapı kalibrasyonu:** aynı kapı üst üste "okumadan onayladım" alıyorsa o track'te **hafifletilir**; gerçek yakalayan kapı ağır kalır. Kapılar yalnız eklenmez, **kalibre edilir** — ölçülmeyen sistemde onay teatralleşir (kapı yorgunluğu).
-- **Geri akış:** PLAYBOOK etiketli dersler buraya işlenir + versiyon artar; sonraki proje güncel sürümü kopyalar.
-
----
-
-## 16. Özet akış
-
-```
-Faz 0 (plan)──[🚦ONAY]──> Faz N parçalara böl
-     │
-     ├─ ② Geliştirme (P): spec[🚦]→plan[🚦]→impl(checkpoint'ler)→test[🚦]→review[🚦]→merge→checkpoint
-     ├─ ④ Tasarım (G):    docs/design + guardian; KAPI3 görsel ağır
-     └─ ③ Ops:            infra-state + runbook; el-ele (artefakt↔kurulum)
-     │
-  ① YÖNETİCİ her track'i koordine eder: rapor→DOĞRULA(verifier-subagent)→kickoff rafine→kapı denetim
-     │
-  doğal sınırda → [yeni session önerisi 🚦] → devir (docs + memory + prompt) → taze session
-     │              (PreCompact emniyet ağı arkada — §10)
-     │
-  faz kapanışı → RETRO (3 soru) → PROJE dersleri workflow'a · PLAYBOOK dersleri base'e (§15)
-```
-
-> **Üç hedefin nasıl korunduğu:** TUTARLILIK = kararlar living-doc'a işlenir + zemin-doğrulama (yöneticinin kendi hafızası dahil hiçbir kaynağa körü körüne güven yok) · SÜRDÜRÜLEBİLİRLİK = state/arşiv ayrımı + bloat-budget + devir kanalları + faz-retro/geri-akış · BAĞLAM KORUNMASI = session tipleri ayrık context + taze-session tercihi + verifier-subagent (yönetici context'i temiz) + PreCompact emniyet ağı.
+- **Canonical home:** this repo. The single truth lives here; scratchpad/project copies are derivatives.
+- **Version + changelog:** every meaningful change gets a version + a CHANGELOG line. A project copy is headed **"← playbook vN"** → which project derived from which version stays visible.
+- **The phase retro (the Manager asks, ~5 min, at phase close):**
+  1. Which gate caught something **real**?
+  2. Which gate did you approve **without reading / from the summary**?
+  3. Which rule was **violated/bypassed** — and why?
+  Answers are labeled: **PROJECT** (recorded into that project's workflow/spec) · **PLAYBOOK** (a changelog candidate for base).
+- **Gate calibration:** if the same gate keeps getting "approved without reading", it is **lightened** on that track; a gate that catches real things stays heavy. Gates are not only added — they are **calibrated**; in an unmeasured system approval turns theatrical (gate fatigue).
+- **Backflow:** PLAYBOOK-labeled lessons are recorded here + the version increments; the next project copies the current version.
 
 ---
 
-## 17. İkinci profil: SOLO — tek-session vibe (`template-solo/`)
+## 16. Summary flow
 
-Aynı metodolojinin iki profili vardır; **DNA ortaktır** (living-docs sistemi · insan kapıları · hook'lar · İngilizce-docs · anti-confabulation · meta-öğrenme). Fark, işin session'lara mı subagent'lara mı dağıtıldığıdır:
+```
+Phase 0 (plan)──[🚦APPROVAL]──> split Phase N into parts
+     │
+     ├─ ② Development (P): spec[🚦]→plan[🚦]→impl(checkpoints)→test[🚦]→review[🚦]→merge→checkpoint
+     ├─ ④ Design (G):      docs/design + guardian; GATE 3 is the heavy one (visual)
+     └─ ③ Ops:             infra-state + runbooks; hand-in-hand (artifact↔installation)
+     │
+  ① The MANAGER coordinates every track: report→VERIFY(verifier subagent)→refine kickoff→audit gates
+     │
+  at the natural boundary → [new-session suggestion 🚦] → handover (docs + memory + prompt) → fresh session
+     │              (the PreCompact safety net in the background — §10)
+     │
+  phase close → RETRO (3 questions) → PROJECT lessons into the workflow · PLAYBOOK lessons into base (§15)
+```
+
+> **How the three goals are protected:** CONSISTENCY = decisions are written into living-docs + ground-truth verification (no source is trusted blindly, including the Manager's own memory) · SUSTAINABILITY = the state/archive split + bloat budget + handover channels + phase retro/backflow · CONTEXT PRESERVATION = session types with separate contexts + the fresh-session preference + the verifier subagent (the Manager's context stays clean) + the PreCompact safety net.
+
+---
+
+## 17. The second profile: SOLO — single-session vibe (`template-solo/`)
+
+The same methodology has two profiles; **the DNA is shared** (the living-docs system · human gates · hooks · English docs · anti-confabulation · meta-learning). The difference is whether work is distributed across sessions or across subagents:
 
 | | **Orchestrated** (`template/`) | **Solo** (`template-solo/`) |
 |---|---|---|
-| Session | çok-session (4 rol) | **TEK session + subagent'lar** |
-| Geliştirme | interaktif dev session'ları | **implementer**-subagent |
-| Kod okuma | dev session'ın işi | **scout**-subagent (ana context'e kod girmez) |
-| Paralellik | worktree ile paralel track'ler | SIRALI — tek branch, tek yazan-subagent |
-| İzinler | standart (commit/merge sorulur) | **GENİŞ** (Edit/Write, commit, merge önceden izinli — kontrol noktası KAPILAR, invariant'lar hook'ta) |
-| Tören | daha yüksek (kickoff/devir) | düşük (`/part` sürücüsü; kickoff/devir yok) |
-| Ne zaman | büyük iş, paralel track'ler, uzun fazlar | küçük/orta iş, solo akış, hız |
+| Sessions | multi-session (4 roles) | **ONE session + subagents** |
+| Development | interactive dev sessions | the **implementer** subagent |
+| Code reading | the dev session's job | the **scout** subagent (code never enters the main context) |
+| Parallelism | parallel tracks via worktrees | SERIAL — one branch, one writing subagent |
+| Permissions | standard (commit/merge ask first) | **WIDE** (Edit/Write, commit, merge pre-allowed — the control points are the GATES, the invariants live in hooks) |
+| Ceremony | higher (kickoffs/handovers) | low (the `/part` driver; no kickoffs/handovers) |
+| When | big work, parallel tracks, long phases | small/medium work, solo flow, speed |
 
-**Mimari:** ana session = **orkestratör** (yönetici + dispatcher). Ürün kodu ana context'te ne yazılır ne okunur — scout cevaplar, implementer değiştirir, verifier doğrular; orkestratöre yalnız **kompakt raporlar** döner. §4.3'ün "geliştirme subagent'a taşınmaz" sınırı solo'da **bilinçli tersine çevrilir:** kullanıcı ham dev akışı yerine orkestratör raporlarını izler *(trade: içeriye görünürlük ↓, tek-session konforu ↑)*. Kapılar aynen insanındır; **zemin-doğrulama aynen geçerlidir** — subagent raporu da session raporu kadar yanılabilir; her implementer dispatch'i sonrası `git log`/`diff --stat` ile doğrulanır. Hook'lar subagent tool-çağrılarında da işler — guard'lar her yerde geçerli.
+**Architecture:** the main session = the **orchestrator** (manager + dispatcher). Product code is neither written nor read in the main context — the scout answers, the implementer changes, the verifier verifies; only **compact reports** return to the orchestrator. §4.3's "development is not moved into subagents" boundary is **deliberately inverted** in solo: the user watches the orchestrator's reports instead of the raw dev stream *(the trade: visibility into the work ↓, single-session comfort ↑)*. The gates remain the human's exactly as before; **ground-truth verification applies unchanged** — a subagent report is as fallible as a session report; after every implementer dispatch it is verified with `git log`/`diff --stat`. Hooks fire on subagent tool calls too — the guards hold everywhere.
 
-**Otonomi (insan bağımlılığı kapılara iner):** kapılar ARASINDA insan hiç durdurulmaz — izinler bilinçli geniştir (Edit/Write, `git commit/merge` önceden izinli; push/reset/rebase yine sorar, yıkıcılar deny). Bu güvenlidir çünkü kontrol izin-promptunda değil: **kapılar insan onayı, invariant'lar hook** (main-guard KAPI4-işaretsiz merge'i zaten bloklar). Dispatch'ler **toplu gider**: küçük parça = onaylı planın tamamı tek dispatch; büyük = 2–4 adımlık paketler; implementer her adımda checkpoint commit atar — history granüler kalır, kesinti azalır.
+**Autonomy (human dependency shrinks to the gates):** BETWEEN gates the human is never stopped — permissions are deliberately wide (Edit/Write, `git commit/merge` pre-allowed; push/reset/rebase still ask, destructive ops are denied). This is safe because control does not live in the permission prompt: **gates carry the human approvals, hooks carry the invariants** (main-guard blocks a GATE4-unmarked merge anyway). Dispatches go **in batches**: a small part = the whole approved plan in one dispatch; bigger = packages of 2–4 steps; the implementer makes a checkpoint commit per step — history stays granular, interruptions stay few.
 
-**Context hijyeni (solo'nun kalbi) — üç katman:**
-1. **Önleme (delegation-first, kural 12):** dosya içerikleri ana context'e hiç girmez → context doğal olarak yavaş dolar; ana context karar + özet taşır.
-2. **Güvenli sıfırlama (`/tidy`, kural 13):** her merge/ops bloğu sonrası — docs zemine eşitlenir, rotasyon yapılır, "yalnız chat'te yaşayan karar" docs'a süpürülür → sıfırlama önerilir: **parça sınırında `/clear` (ÖNERİLEN — orchestrated'daki "taze session"ın solo karşılığı)**, parça ortasında `/compact`. **Dürüst sınır:** model kendi context'ini SİLEMEZ (`/clear`/`/compact` kullanıcı komutlarıdır) — yapabildiği: dolmasını önlemek, sıfırlamayı sıfır-riskli kılmak, tek tuşluk öneri vermek. Kalite sırası: sınırda `/clear` > `/compact` > plansız auto-compaction (o bile güvenli — snapshot + docs disiplini). **Restart-testi** (devir-testinin solo karşılığı): `/clear` sonrası taze session CLAUDE.md + living-docs + memory'den kaldığı yerden devam edebilmeli. *(Memory `/clear`'dan sağ çıkar → davranış memory'de, durum docs'ta, temizlik ucuz. Yani solo "tek session" = tek pencere/akış demektir, tek ömürlük context DEĞİL — orchestrated'daki taze-session hijyeni solo'da parça sınırındaki /clear ile aynen yaşar.)*
-3. **Emniyet ağı (PreCompact default-ON):** solo session uzun yaşar, compaction kesin gelir — orchestrated'da opsiyonel olan hook solo'da varsayılandır.
+**Context hygiene (the heart of solo) — three layers:**
+1. **Prevention (delegation-first, rule 12):** file contents never enter the main context → the context fills slowly by nature; the main context carries decisions + summaries.
+2. **Safe reset (`/tidy`, rule 13):** after every merge/ops block — the docs are synced to the ground, rotation is done, "decisions that live only in chat" are swept into the docs → the reset is offered: **`/clear` at a part boundary (RECOMMENDED — the solo equivalent of orchestrated's fresh session)**, `/compact` mid-part. **The honest limit:** the model CANNOT wipe its own context (`/clear`/`/compact` are user commands) — what it can do: keep the context from filling, make the reset zero-risk, and offer it as one keystroke. Quality order: `/clear` at a boundary > `/compact` > unplanned auto-compaction (even that is safe — snapshot + docs discipline). **The restart test** (the solo counterpart of the handover test): after `/clear`, a fresh session must continue from CLAUDE.md + living-docs + memory alone. *(Memory survives `/clear` → behavior in memory, state in docs, cleaning is cheap. So solo's "one session" means one window/flow — NOT one lifelong context; orchestrated's fresh-session hygiene lives on in solo as `/clear` at part boundaries.)*
+3. **The safety net (PreCompact default-ON):** a solo session lives long; compaction WILL come — the hook that is optional in orchestrated is the default in solo.
 
-**Mod geçişi:** living-docs katmanı iki profilde birebir aynıdır (aynı dosya adları, aynı spec şablonu) → proje ortasında geçiş mümkündür: `.claude/` + `workflow.md` + `CLAUDE.md` değişir, docs olduğu gibi kalır. **Solo başla, paralellik doğunca orchestrated'a geç** — desteklenen yol budur.
+**Profile switching:** the living-docs layer is identical in both profiles (same file names, same spec template) → switching mid-project is possible: `.claude/` + `workflow.md` + `CLAUDE.md` change, the docs stay as they are. **Start solo, switch to orchestrated when parallelism appears** — that is the supported path.

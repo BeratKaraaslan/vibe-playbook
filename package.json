@@ -1,0 +1,43 @@
+{
+  "name": "vibe-playbook",
+  "version": "6.0.0",
+  "description": "Vibe-coding playbook for Claude Code — methodology + two ready-to-copy project templates (orchestrated multi-session & solo single-session) with human gates, living-docs, and enforcement hooks.",
+  "bin": {
+    "vibe-playbook": "bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "template/",
+    "template-solo/",
+    "PLAYBOOK.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "bash test/run.sh"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "claude-code",
+    "claude",
+    "ai",
+    "llm",
+    "vibe-coding",
+    "workflow",
+    "playbook",
+    "template",
+    "scaffold",
+    "agent"
+  ],
+  "author": "Berat Karaaslan <beratkaraaslann@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BeratKaraaslan/vibe-playbook.git"
+  },
+  "homepage": "https://github.com/BeratKaraaslan/vibe-playbook#readme",
+  "bugs": {
+    "url": "https://github.com/BeratKaraaslan/vibe-playbook/issues"
+  }
+}

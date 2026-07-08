@@ -1,17 +1,28 @@
 # STARTGUIDE — new project setup (for the human)
 
-> Source: vibe-playbook v5 `template/` (orchestrated profile). Total time ~10 min.
+> Source: vibe-playbook v6 `template/` (orchestrated profile). Total time ~10 min.
 > **Solo alternative:** one session + subagents, lower ceremony → `template-solo/`.
 > Process rules: [workflow.md](workflow.md) · rationale: the canonical playbook repo.
 > Language: chat with the agents in any language — **all docs are written in English** (CLAUDE.md rule 11).
 
-## 1. Copy (2 min)
+## 1. Scaffold (2 min)
+
+Easiest — via npm (renames `gitignore`, chmods hooks for you):
+
+```bash
+npx vibe-playbook init orchestrated <new-project>
+cd <new-project>
+git init && git add -A && git commit -m "scaffold: playbook v6 template"
+```
+
+Or copy manually from a clone:
 
 ```bash
 cp -R <vibe-playbook>/template/. <new-project>/
 cd <new-project>
+mv gitignore .gitignore        # shipped without the dot (npm packaging constraint)
 chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v5 template"
+git init && git add -A && git commit -m "scaffold: playbook v6 template"
 ```
 
 ## 2. Adapt (5 min)
