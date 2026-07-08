@@ -1,7 +1,8 @@
 # STARTGUIDE — new project setup, SOLO mode (for the human)
 
 > Source: vibe-playbook v6 `template-solo/`. Total time ~10 min.
-> **Solo = ONE session + subagents.** Low ceremony, serial flow. Need parallel tracks (client/backend/design at once)? Use `template/` (orchestrated) instead — or switch later; the living-docs are identical.
+> **Audience: vibe coders** — and developers who want low ceremony. You do NOT need git/terminal expertise beyond pasting the blocks below: the agent drives branches, commits, and merges; **you steer in plain language and approve at the gates**. The one thing no template removes: the gates ask for your judgment ("is this what I asked for? does it work when I try it?") — that judgment is the safety backbone, especially around money/auth.
+> **Solo = ONE session + subagents.** Serial flow. Need parallel tracks (client/backend/design at once)? Use `template/` (orchestrated) — or switch later; the living-docs are identical.
 > Language: chat in any language — **all docs are written in English** (CLAUDE.md rule 11).
 
 ## 1. Scaffold (2 min)

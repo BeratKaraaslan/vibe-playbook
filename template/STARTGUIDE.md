@@ -1,7 +1,8 @@
 # STARTGUIDE — new project setup (for the human)
 
 > Source: vibe-playbook v6 `template/` (orchestrated profile). Total time ~10 min.
-> **Solo alternative:** one session + subagents, lower ceremony → `template-solo/`.
+> **Audience: software developers** — you will read specs/diffs, approve gates, and coordinate sessions.
+> **Vibe coder?** → `template-solo/` (one session; the agent drives the mechanics).
 > Process rules: [workflow.md](workflow.md) · rationale: the canonical playbook repo.
 > Language: chat with the agents in any language — **all docs are written in English** (CLAUDE.md rule 11).
 

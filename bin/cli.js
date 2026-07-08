@@ -23,10 +23,12 @@ Usage:
   npx vibe-playbook init <solo|orchestrated> [target-dir] [--force]
 
 Profiles:
-  solo          ONE session + subagents (scout/implementer/verifier), low ceremony.
-                Recommended starting point; switch to orchestrated when you need
-                parallel tracks (the living-docs are identical).
-  orchestrated  Multi-session (Manager/Dev/Ops/Design), parallel tracks via worktrees.
+  solo          For VIBE CODERS (and developers who want low ceremony): ONE session +
+                subagents (scout/implementer/verifier); the agent drives the git/terminal
+                mechanics, you approve at gates in plain language. Recommended start;
+                switch to orchestrated when you need parallel tracks (docs are identical).
+  orchestrated  For SOFTWARE DEVELOPERS: multi-session (Manager/Dev/Ops/Design), you read
+                specs/diffs and coordinate sessions; parallel tracks via git worktrees.
 
 Options:
   target-dir    Where to scaffold (default: current directory). Created if missing.

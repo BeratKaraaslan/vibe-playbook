@@ -19,8 +19,11 @@ The CLI copies the chosen template, restores `.gitignore`, and makes the hooks e
 
 ## Pick a profile
 
+The split is by **audience** as much as by project shape:
+
 | | [`template/`](template/) — **Orchestrated** | [`template-solo/`](template-solo/) — **Solo** |
 |---|---|---|
+| **Made for** | **software developers** — you read specs and diffs, coordinate sessions, run parallel tracks | **vibe coders** — the agent drives all git/terminal mechanics; you describe, approve at gates in plain language, and flow *(developers who want low ceremony: also you)* |
 | Sessions | multiple sessions, 4 roles (Manager · Dev · Ops · Design) | **ONE session + subagents** |
 | Development | interactive dev sessions (you watch the work) | `implementer` subagent (you read compact reports) |
 | Code reading | the dev session's job | `scout` subagent — code never enters the main context |
@@ -28,6 +31,8 @@ The CLI copies the chosen template, restores `.gitignore`, and makes the hooks e
 | Permissions | standard — commit/merge ask first | **wide** — edits/commit/merge pre-allowed; the gates are the control points |
 | Ceremony | higher (kickoffs, handovers) | low — `/part` drives everything |
 | Best for | larger projects, parallel tracks, long phases | small/medium projects, solo flow, speed |
+
+**Rule of thumb:** if you read diffs and want parallel tracks → orchestrated. If you want to describe → approve → flow → solo. One honest note for vibe coders: the gates still ask for *your judgment* (does this match what I asked? does it work when I try it?) — that judgment is the safety backbone and no template removes it, especially around money/auth.
 
 Both profiles share the same DNA: the living-docs system, the four human gates, the enforcement hooks, English-only docs, and anti-confabulation ("if it's not in the docs, it's not known"). Because the living-docs layer is **identical** in both, a project can switch profiles mid-flight: swap `.claude/` + `workflow.md` + `CLAUDE.md`, keep all the docs. Recommended path: **start solo, move to orchestrated when you need parallel tracks.**
 

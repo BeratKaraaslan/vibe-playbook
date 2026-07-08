@@ -317,10 +317,11 @@ Phase 0 (plan)──[🚦APPROVAL]──> split Phase N into parts
 
 ## 17. The second profile: SOLO — single-session vibe (`template-solo/`)
 
-The same methodology has two profiles; **the DNA is shared** (the living-docs system · human gates · hooks · English docs · anti-confabulation · meta-learning). The difference is whether work is distributed across sessions or across subagents:
+The same methodology has two profiles; **the DNA is shared** (the living-docs system · human gates · hooks · English docs · anti-confabulation · meta-learning). The difference is the **audience** as much as how work is distributed:
 
 | | **Orchestrated** (`template/`) | **Solo** (`template-solo/`) |
 |---|---|---|
+| **Made for** | **software developers** — read specs/diffs, coordinate sessions | **vibe coders** (and developers in vibe mode) — the agent drives the mechanics; the human steers in plain language |
 | Sessions | multi-session (4 roles) | **ONE session + subagents** |
 | Development | interactive dev sessions | the **implementer** subagent |
 | Code reading | the dev session's job | the **scout** subagent (code never enters the main context) |
@@ -337,5 +338,7 @@ The same methodology has two profiles; **the DNA is shared** (the living-docs sy
 1. **Prevention (delegation-first, rule 12):** file contents never enter the main context → the context fills slowly by nature; the main context carries decisions + summaries.
 2. **Safe reset (`/tidy`, rule 13):** after every merge/ops block — the docs are synced to the ground, rotation is done, "decisions that live only in chat" are swept into the docs → the reset is offered: **`/clear` at a part boundary (RECOMMENDED — the solo equivalent of orchestrated's fresh session)**, `/compact` mid-part. **The honest limit:** the model CANNOT wipe its own context (`/clear`/`/compact` are user commands) — what it can do: keep the context from filling, make the reset zero-risk, and offer it as one keystroke. Quality order: `/clear` at a boundary > `/compact` > unplanned auto-compaction (even that is safe — snapshot + docs discipline). **The restart test** (the solo counterpart of the handover test): after `/clear`, a fresh session must continue from CLAUDE.md + living-docs + memory alone. *(Memory survives `/clear` → behavior in memory, state in docs, cleaning is cheap. So solo's "one session" means one window/flow — NOT one lifelong context; orchestrated's fresh-session hygiene lives on in solo as `/clear` at part boundaries.)*
 3. **The safety net (PreCompact default-ON):** a solo session lives long; compaction WILL come — the hook that is optional in orchestrated is the default in solo.
+
+**The audience line, honestly drawn:** solo removes the *mechanical* developer dependencies (branches, commits, merges, worktrees — the agent runs them; GATE 4 is presented plain-language-first with a technical appendix). It does NOT remove the *judgment* dependency: the gates still ask a human "is this what I wanted? does it work when I try it?" — that judgment is the safety backbone, and on money/auth surfaces it matters most. A vibe coder supplies judgment; a developer can additionally read the appendix.
 
 **Profile switching:** the living-docs layer is identical in both profiles (same file names, same spec template) → switching mid-project is possible: `.claude/` + `workflow.md` + `CLAUDE.md` change, the docs stay as they are. **Start solo, switch to orchestrated when parallelism appears** — that is the supported path.

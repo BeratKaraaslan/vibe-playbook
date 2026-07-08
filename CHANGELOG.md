@@ -1,5 +1,11 @@
 # CHANGELOG — Vibe-Coding Orchestration Playbook
 
+## v6.1 — 2026-07-08
+- **The audience axis made explicit (user request):** the two profiles were shipped framed by project shape (parallel vs serial); the intended split was by audience — **orchestrated = software developers** (read specs/diffs, coordinate sessions), **solo = vibe coders** and developers in vibe mode (the agent drives all git/terminal mechanics; the human steers in plain language). Now stated at every decision surface: README profile table ("Made for" row + rule of thumb), CLI `--help` profile descriptions, both STARTGUIDE headers, the §17 table, the npm package description.
+- **Solo GATE 4 is plain-language-first:** `/review` now presents (a) a plain summary — what the part does, what the verifier confirmed, remaining risks, what to try by hand — then (b) a technical appendix (file:line spots + diff command) for those who read code.
+- **The honest line, written down (§17 + solo STARTGUIDE + README):** solo removes the *mechanical* developer dependencies, not the *judgment* one — gates still ask a human "is this what I wanted / does it work?"; that judgment is the safety backbone, especially around money/auth.
+- Package `6.1.0` (minor: framing + one command ergonomic; the methodology core is unchanged — major stays = playbook v6).
+
 ## v6 — 2026-07-08
 - **The canonical repo is fully English:** PLAYBOOK.md + CHANGELOG.md translated (README already was). The v4-era decision to keep the playbook Turkish as the "human-rationale layer" is reversed by user request — the repo is no longer mixed-language. Chat language remains free (rule 11 unchanged); everything written is English.
 - **npm packaging:** the repo now ships as the **`vibe-playbook`** package (name verified free on the registry). `package.json` (version 6.0.0 — **package major = playbook version**), MIT LICENSE, zero-dependency **`bin/cli.js`**: `npx vibe-playbook init <solo|orchestrated> [dir]` copies the profile, restores `.gitignore`, chmods the hooks, refuses to overwrite existing files (`--force` to override), prints next steps.
