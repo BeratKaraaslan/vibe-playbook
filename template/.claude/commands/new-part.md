@@ -1,5 +1,6 @@
 ---
 description: (Manager) Produce a fresh-session kickoff draft from the living-docs
+argument-hint: <part-id>
 ---
 
 Produce the kickoff for part $ARGUMENTS.

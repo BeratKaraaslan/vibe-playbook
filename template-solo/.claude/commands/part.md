@@ -1,5 +1,6 @@
 ---
 description: Drive part $ARGUMENTS through its full cycle (spec→gates→implement→verify→merge), stopping at every gate
+argument-hint: <part-id> (e.g. P-3)
 ---
 
 Drive part $ARGUMENTS end to end. **STOP at every 🚦 — approval belongs to the human.**

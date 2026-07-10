@@ -1,5 +1,6 @@
 ---
 description: Implementation plan from the approved spec — stops at GATE 2
+argument-hint: <part-id>
 ---
 
 Produce the plan for part $ARGUMENTS:

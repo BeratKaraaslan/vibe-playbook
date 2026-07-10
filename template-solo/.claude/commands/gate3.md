@@ -1,5 +1,6 @@
 ---
 description: GATE 3 mechanical evidence — run test+lint+typecheck, print a compact evidence block
+argument-hint: [part-id]
 ---
 
 GATE 3 mechanical evidence step ($ARGUMENTS):

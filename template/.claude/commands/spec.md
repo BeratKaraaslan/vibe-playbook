@@ -1,5 +1,6 @@
 ---
 description: Write a part spec (from module-specs/_TEMPLATE.md) — stops at GATE 1
+argument-hint: <part-id> (e.g. P-3)
 ---
 
 Write the spec for part $ARGUMENTS:

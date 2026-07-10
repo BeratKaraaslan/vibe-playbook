@@ -107,7 +107,7 @@ function main() {
   console.log(`Scaffolded the ${profile} profile into ${rel} (${files.length} files).
 
 Next steps:
-  1. cd ${rel === "." ? "" : rel + " && "}git init && git add -A && git commit -m "scaffold: playbook v6 ${profile} template"
+  1. cd ${rel === "." ? "" : rel + " && "}git init && git add -A && git commit -m "scaffold: playbook v7 ${profile} template"
   2. Open STARTGUIDE.md — adapt CLAUDE.md + .claude/settings.json (~5 min).
   3. Start a Claude Code session in that directory and paste the Phase 0 kickoff from STARTGUIDE.md.`);
 }

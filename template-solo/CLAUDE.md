@@ -8,6 +8,10 @@
 
 - Stack: <Phase 0> · Test: `<command>` · Lint: `<command>` · Typecheck: `<command>`
 
+## Scale & pragmatism
+
+<Phase 0: one honest line about scale + explicit NON-goals — e.g. "side-project scale: standard security hygiene YES; gold-plating, heavy compliance flows, premature scaling NO." This is the calibration against over-engineering; it is read every session.>
+
 ## Doc map (what loads when)
 
 - `progress.md` + `issues.md` → at session start and right after `/clear`

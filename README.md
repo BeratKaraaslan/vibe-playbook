@@ -61,7 +61,7 @@ npx vibe-playbook init orchestrated my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template/. my-project/ && cd my-project
 #   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v6 template"
+git init && git add -A && git commit -m "scaffold: playbook v7 template"
 ```
 
 1. **Adapt (~5 min):** fill the `CLAUDE.md` placeholders (project name; test/lint/typecheck commands once the stack is locked) and replace the `npm` examples in `.claude/settings.json` → `allow` with your stack's commands.
@@ -81,7 +81,7 @@ npx vibe-playbook init solo my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template-solo/. my-project/ && cd my-project
 #   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v6 solo template"
+git init && git add -A && git commit -m "scaffold: playbook v7 solo template"
 ```
 
 1. **Adapt (~5 min):** same as above (CLAUDE.md placeholders + settings allow list). The PreCompact snapshot hook is **on by default** in this profile.

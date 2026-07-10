@@ -1,5 +1,6 @@
 ---
 description: GATE 4 flow — the verifier subagent verifies; findings + approval step are presented
+argument-hint: <part-id>
 ---
 
 Start the GATE 4 review flow (part: $ARGUMENTS):

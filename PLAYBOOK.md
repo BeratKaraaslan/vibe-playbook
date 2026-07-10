@@ -4,10 +4,11 @@
 > Domain-neutral: copied into every new project, specialized during Phase 0.
 > **Three first-class goals:** consistency · sustainability · context preservation.
 >
-> **Version: v6** (2026-07-08) · canonical home = this repo, copies are derivatives (§15) · changes → [CHANGELOG.md](CHANGELOG.md)
+> **Version: v7** (2026-07-10) · canonical home = this repo, copies are derivatives (§15) · changes → [CHANGELOG.md](CHANGELOG.md)
 > **Since v3:** the skeleton is no longer prose — [`template/`](template/) is real files; new project = copy + `template/STARTGUIDE.md` (§14).
 > **Since v5:** two profiles — [`template/`](template/) (**orchestrated**: multi-session) · [`template-solo/`](template-solo/) (**solo**: one session + subagents, §17).
 > **Since v6:** the whole repo is English and ships as an npm package (`npx vibe-playbook init <solo|orchestrated>`).
+> **Since v7:** the first real §15 backflow — field lessons from the origin project's retro (design-track mechanics · spine/prompts doc classes · the PR-flow note · script>runbook · anti-gold-plating).
 
 ---
 
@@ -124,6 +125,7 @@ The Manager verifies claims from the code — but **NOT by reading files into it
 **Its living-docs:**
 - `infra-state.md` — **the board**: the CURRENT truth of the installed infrastructure (server, environments, domains, services, ports, "which secret lives where"). A state doc = EDIT, stays small. Manager/dev **read**, Ops **writes**.
 - `docs/ops/<runbook>.md` — step-by-step durable instructions + **why-decisions** (e.g. "port 23 because…", "classic PAT because fine-grained broke on X").
+- **Script > runbook-prose:** a runbook step that runs more than once becomes an **executable script** (`ops/` — e.g. `backup.sh`, `restore-test.sh`); the runbook then documents the WHY and calls the script. *(The ops counterpart of "hook > instruction" — field-proven.)*
 
 **Sync (through the living-docs):**
 ```
@@ -146,6 +148,8 @@ Together:        VERIFY in the real environment (smoke/restore test); AI alone n
 ```
 The Manager coordinates this bridge (which artifact is ready, which ops step is waiting).
 
+Beware **sham-green CI** *(field lesson)*: a green pipeline is not proof — the real-environment smoke is; a CD job can stay green while verifying nothing. Before the first prod cutover, a short **go-live checklist** (env · migrations · seeds · secrets · full-journey smoke) pays for itself — the field case: three prod blockers that gates+CI missed were caught by a human walking the real journey on staging.
+
 ---
 
 ## 7. The living-docs system (the process lives on this)
@@ -167,9 +171,13 @@ The Manager coordinates this bridge (which artifact is ready, which ops step is 
 | `open-questions.md` · `NEEDS-FROM-USER.md` | open decisions · needed keys/accounts | Edit | as needs arise |
 | `phase-kickoffs.md` | draft commands for later phases | Edit | at phase transitions |
 | `workflow.md` / this playbook | methodology (headed: "← playbook vN") | Edit (rare) | reference |
+| `shared-spine.md` *(optional — multi-module products; created in Phase 0 when needed)* | the cross-part CONTRACT: the common flow + the interfaces every part plugs into; specs then define **only deltas** | Edit | for relevant work |
+| `prompts/` *(optional — LLM products)* | **runtime asset, NOT a living doc**: versioned prompt files (`.vN`), agent-maintained; every output stores `promptVersion`+`model` (debug/rollback/A-B) | versioned asset | runtime (code reads it) |
 | `docs/archive/*` · `docs/ops/*` · `docs/design/*` | history · runbooks · design | Append | **on request** |
 
-**Rotation:** issue resolved → one line in the changelog · a completed phase collapses to one line in progress · each phase end → `phase-N-summary.md` · **bloat budget** ~150–200 lines → prune proactively + notify.
+LLM products, one timing rule: **draft the base persona BEFORE the first LLM part** — otherwise every output gets re-toned later (asset timing is decision timing, §8).
+
+**Rotation:** issue resolved → one line in the changelog · a completed phase collapses to one line in progress · each phase end → `phase-N-summary.md` · **bloat budget** ~150–200 lines → prune proactively + notify. **The budget is CONTENT, not line count** *(field lesson: a status board can stay under the line budget while one "Now" cell swells into a 4 kB paragraph)* — keep the progress "Now" section to 3–5 bullets; overflow goes to issues/archive.
 
 **The golden rule:** a structural decision/change is **never just said inline** — it is **written into** the relevant spec/issues/architecture (it must outlive the session boundary). If it only affects the current screen → say it; if it changes a decision recorded in a doc → have the doc updated.
 
@@ -187,7 +195,7 @@ The Manager coordinates this bridge (which artifact is ready, which ops step is 
 
 Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. Adapted per project; the typical core:
 
-- **Commit discipline (branch + checkpoint):** a part flows on its own branch (`wip/P-N`, `feat/…` — NO direct work on main). Small **checkpoint commits are free and encouraged** — the loss window (crash · wrong tool call · muscle-memory reflex) never opens. **The invariant: nothing enters main without GATE 4.** The review diff is one command: `git diff main...<branch>`. Optionally the history is squashed/curated after GATE 4 (only on that branch, with prior permission).
+- **Commit discipline (branch + checkpoint):** a part flows on its own branch (`wip/P-N`, `feat/…` — NO direct work on main). Small **checkpoint commits are free and encouraged** — the loss window (crash · wrong tool call · muscle-memory reflex) never opens. **The invariant: nothing enters main without GATE 4.** The review diff is one command: `git diff main...<branch>`. Optionally the history is squashed/curated after GATE 4 (only on that branch, with prior permission). **PR variant** *(field-proven)*: when merges happen on GitHub (PRs), the GATE 4 marker = the PR approval itself and **main-guard never sees the merge** — protect the invariant with **branch protection** on main instead; the hook keeps guarding local commits.
 - **Git safety:** with uncommitted work, **`git restore/stash/clean/checkout --` NEVER**; ask first for destructive ops (force/reset/branch delete). *(Checkpoint discipline already shrinks this risk.)*
 - **Hook > instruction:** any hygiene rule that can be enforced is applied via a **harness hook**, not a model instruction (guard-env = secrets · **main-guard = blocks code commits on main + GATE4-unmarked merges** · PreCompact = handover state). Instructions get forgotten/skipped; hooks do not. The general principle: **every enforceable invariant goes into a hook, every automatable proof into a script** (/gate3) — human attention is reserved for real judgment.
 - **Secret hygiene:** `.env` is never read/printed (**PreToolUse guard hook** enforces it — in every form: direct read, subcommand, glob, script; only `.env.example` is accessible); never hardcoded. On a guard-env block: STOP — report to the user and wait for approval; never retry via another path. **The leak protocol (user-side leaks):** if the user pastes a sensitive value into chat (DB URL, API key…) — the value is NOT repeated, not written into any file/doc/command; if it landed anywhere it is deleted IMMEDIATELY; the user is notified + **rotation is recommended** *(the honest limit: chat history cannot be truly deleted — the only permanent fix is rotation)*; the right place is `.env`/panel, and the human places it. The **secret-scan hook** (UserPromptSubmit, §12) reminds the model of the protocol at exactly that moment — it does not block, it nudges.
@@ -233,7 +241,8 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 │  │                   #   (docs-only commits on main allowed · marker: human approval → .claude/.gate4-ok)
 │  └─ pre-compact.sh   # (OPTIONAL — by choice at project start) PreCompact: ground snapshot + notification (§10)
 ├─ agents/             # verifier (GATE 4, §4.3) — the MINIMAL set; spec-writer/test-writer/design-guardian
-│                      #   are added only once proven load-bearing (every agent is carried maintenance)
+│                      #   are added only once proven load-bearing (every agent is carried maintenance).
+│                      #   verifier: pin a strong model + grow a project-specific checklist in it (Phase 0)
 └─ commands/           # /spec · /plan · /checkpoint · /gate3 (GATE 3 mechanical proof) · /review · /new-part
 ```
 
@@ -246,6 +255,15 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 | **Code** | P1, P2… | GATE 4 (money/auth) | branch + checkpoint commits (§9); NO entry into main without GATE 4 |
 | **Design** | G1, G2… | GATE 3 (visual/browser) | decision-maker: **Claude Design** (MCP; Claude Code **terminal mandatory**) · guardian guardrail; docs/design/ + STATUS |
 | **Ops** | (ad-hoc) | "verify together" | persistent(cache) session; infra-state + runbooks |
+
+**The design-track loop (field-proven; template: `docs/design/README.md`):**
+```
+brief (docs/design/<task>/brief.md) → Claude Design prototype (READ-ONLY on the repo; no commits)
+→ Export / Handoff bundle → Code implements (design tokens only — no hardcoded values)
+→ design-system-guardian gate (CODE SIDE ONLY) → PR → fixed-format report to the Manager → STATUS ledger
+```
+- **Known constraint:** Claude Design **cannot read `.claude/agents/`** — Design-side conformance comes from the published Design System (+ `design-system-notes.md`); the guardian gates only the Code side.
+- **Two field lessons:** keep a `DESIGN-CONTEXT.md` **inside the web-app directory** (Design's read-only access can SEE it — the as-built truth both sides share) · **front-load hybrid**: global shell screens up-front, module screens JIT after their spec locks (designing before the spec locks = rework).
 
 ---
 
