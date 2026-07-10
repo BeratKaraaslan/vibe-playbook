@@ -1,6 +1,6 @@
 # workflow.md — working rules (normative summary, SOLO mode)
 
-> **← playbook v7 (solo profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
+> **← playbook v8 (solo profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
 > Project-specific deviations go into "Project deviations" at the bottom — do not edit the body.
 > Abbreviation: GATE 1–4 = the human gates.
 
@@ -22,8 +22,8 @@
 `/part <P-N>` drives a part end to end, stopping at every gate:
 
 ```
-/spec → 🚦GATE 1 · /plan → 🚦GATE 2 · implementer dispatches (checkpoint commits) ·
-/gate3 → 🚦GATE 3 (evidence + human tries it) · /review (verifier) → 🚦GATE 4 ·
+/gate1 → 🚦GATE 1 · /gate2 → 🚦GATE 2 · implementer dispatches (checkpoint commits) ·
+/gate3 → 🚦GATE 3 (evidence + human tries it) · /gate4 (verifier) → 🚦GATE 4 ·
 merge ritual (.gate4-ok → merge → rm) → /tidy
 ```
 

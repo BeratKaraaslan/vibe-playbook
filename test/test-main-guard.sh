@@ -48,6 +48,29 @@ check 0 "non-git command free" "$(j 'npm run test')"
 git switch -q main
 check 0 "git log --merges free (no false positive)" "$(j 'git log --merges')"
 
+# --- reviewer-found edge cases (v8) ---
+echo z2 >> app.js; git add app.js
+check 2 "git -C . commit blocked (flag form)" "$(j 'git -C . commit -m x')"
+check 2 "git -c k=v commit blocked (flag form)" "$(j 'git -c user.name=t commit -m x')"
+check 2 "cherry-pick on main blocked" "$(j 'git cherry-pick abc1234')"
+git restore --staged app.js; git checkout -q -- app.js
+
+echo "wip/P-1" > .claude/.gate4-ok
+check 2 "prefix branch NOT approved (wip/P-1 marker vs wip/P-10 merge)" "$(j 'git merge wip/P-10')"
+check 0 "exact branch still approved" "$(j 'git merge wip/P-1')"
+rm .claude/.gate4-ok
+
+check 0 "git log --grep commit free (no false positive)" "$(j 'git log --grep commit')"
+
+# protected-branch configurability
+git switch -qc trunk
+echo t >> app.js; git add app.js
+check 0 "trunk unprotected by default" "$(j 'git commit -m x')"
+export VIBE_PROTECTED_BRANCHES="main master trunk"
+check 2 "trunk protected via VIBE_PROTECTED_BRANCHES" "$(j 'git commit -m x')"
+unset VIBE_PROTECTED_BRANCHES
+git restore --staged app.js; git checkout -q -- app.js
+
 cd /; rm -rf "$REPO"
 echo "RESULT: $PASS passed, $FAIL failed"
 exit $FAIL

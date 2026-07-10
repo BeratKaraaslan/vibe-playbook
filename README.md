@@ -15,7 +15,9 @@ npx vibe-playbook init solo my-project          # recommended starting profile
 npx vibe-playbook init orchestrated my-project  # multi-session profile
 ```
 
-The CLI copies the chosen template, restores `.gitignore`, and makes the hooks executable. No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
+The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version (`.claude/.vibe-playbook`) — it refuses to overlay a different profile onto an existing scaffold (that would leave stale files mixed in). No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
+
+Tip: pin the version for reproducible scaffolds — `npx vibe-playbook@8 init solo my-project`. A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
 
 ## Pick a profile
 
@@ -32,27 +34,30 @@ The split is by **audience** as much as by project shape:
 | Ceremony | higher (kickoffs, handovers) | low — `/part` drives everything |
 | Best for | larger projects, parallel tracks, long phases | small/medium projects, solo flow, speed |
 
-**Rule of thumb:** if you read diffs and want parallel tracks → orchestrated. If you want to describe → approve → flow → solo. One honest note for vibe coders: the gates still ask for *your judgment* (does this match what I asked? does it work when I try it?) — that judgment is the safety backbone and no template removes it, especially around money/auth.
+**Rule of thumb:** if you read diffs and want parallel tracks → orchestrated. If you want to describe → approve → flow → solo. For a few-hour prototype, skip the playbook entirely — process would only slow you down. One honest note for vibe coders: the gates still ask for *your judgment* (does this match what I asked? does it work when I try it?) — that judgment is the safety backbone and no template removes it, especially around money/auth.
 
 Both profiles share the same DNA: the living-docs system, the four human gates, the enforcement hooks, English-only docs, and anti-confabulation ("if it's not in the docs, it's not known"). Because the living-docs layer is **identical** in both, a project can switch profiles mid-flight: swap `.claude/` + `workflow.md` + `CLAUDE.md`, keep all the docs. Recommended path: **start solo, move to orchestrated when you need parallel tracks.**
 
 ## Requirements
 
 - **Claude Code** (CLI). The design track additionally uses the **Claude Design MCP** as design decision-maker — that connection requires Claude Code run **from the terminal**.
-- `git`, `bash`, `python3` (used by the hooks). macOS/Linux.
+- `git`, `bash`, `python3` (used by the hooks). macOS/Linux (on Windows, use WSL).
 - Node ≥ 18 only if you scaffold via `npx` (the templates themselves need no Node).
+- First run must be **interactive**: Claude Code applies a project's `settings.json` permissions only after you accept the workspace-trust prompt.
 
 ## The gates (both profiles)
 
 ```
-/spec   → 🚦 GATE 1  spec approval       (the cheapest place to stop a wrong direction)
-/plan   → 🚦 GATE 2  plan approval       (combined with GATE 1 for small/low-risk parts)
+/gate1  → 🚦 GATE 1  spec approval       (the cheapest place to stop a wrong direction)
+/gate2  → 🚦 GATE 2  plan approval       (combined with GATE 1 for small/low-risk parts)
 IMPL    →            checkpoint commits on a wip/ branch
 /gate3  → 🚦 GATE 3  mechanical evidence (test/lint/typecheck) + you try it for real
-/review → 🚦 GATE 4  read-only verifier subagent + YOUR approval → merge
+/gate4  → 🚦 GATE 4  read-only verifier subagent + YOUR approval → merge
 ```
 
-**Nothing enters `main` without GATE 4** — not a convention: the `main-guard` hook physically blocks code commits on main and merges without the approval marker.
+*(Command names deliberately avoid Claude Code built-ins — the earlier `/plan`, `/review`, `/checkpoint` names could shadow them.)*
+
+**Nothing enters a protected branch without GATE 4** — not a convention: the `main-guard` hook physically blocks code commits, cherry-picks, and unmarked merges on protected branches (`main`/`master` by default; extend via `VIBE_PROTECTED_BRANCHES`). Merging via GitHub PRs instead? The hook never sees those merges — use branch protection there.
 
 ## Quick start — Orchestrated (`template/`)
 
@@ -61,7 +66,7 @@ npx vibe-playbook init orchestrated my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template/. my-project/ && cd my-project
 #   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v7 template"
+git init && git add -A && git commit -m "scaffold: playbook v8 template"
 ```
 
 1. **Adapt (~5 min):** fill the `CLAUDE.md` placeholders (project name; test/lint/typecheck commands once the stack is locked) and replace the `npm` examples in `.claude/settings.json` → `allow` with your stack's commands.
@@ -81,7 +86,7 @@ npx vibe-playbook init solo my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template-solo/. my-project/ && cd my-project
 #   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v7 solo template"
+git init && git add -A && git commit -m "scaffold: playbook v8 solo template"
 ```
 
 1. **Adapt (~5 min):** same as above (CLAUDE.md placeholders + settings allow list). The PreCompact snapshot hook is **on by default** in this profile.
@@ -100,7 +105,7 @@ Full guide: [`template-solo/STARTGUIDE.md`](template-solo/STARTGUIDE.md)
 | Hook | Event | What it does |
 |---|---|---|
 | `guard-env.sh` | PreToolUse | Physically blocks **any** access to `.env*` — direct tool reads/writes AND Bash subcommands (`cat`/`cp`/`source`/redirects/scripts), glob forms (`.env*`), case variants (`.ENV`), Grep globs. Only `.env.example` is fully accessible. On a block the agent must stop and ask you — env values are always placed by the human |
-| `main-guard.sh` | PreToolUse (Bash) | Blocks code commits on main and merges without the GATE 4 marker (`.claude/.gate4-ok`); docs-only commits on main are allowed |
+| `main-guard.sh` | PreToolUse (Bash) | Blocks code commits, cherry-picks, and unmarked merges on protected branches (`main`/`master` default, `VIBE_PROTECTED_BRANCHES` to extend); exact-branch GATE 4 marker (`.claude/.gate4-ok`); flag forms (`git -C . commit`) covered; docs-only commits stay free |
 | `secret-scan.sh` | UserPromptSubmit | If your message looks like it contains a secret (connection string, API key, JWT, private key), it reminds the model of the **leak protocol**: never repeat the value, delete it wherever it was written, recommend rotation — chat history cannot be unsaid |
 | `pre-compact.sh` | PreCompact | Snapshots branch/status/log to `docs/archive/compact-snapshots.md` before any compaction (optional in orchestrated, **default-on in solo**) |
 
@@ -110,11 +115,11 @@ Hooks apply to subagent tool calls too. They are safety nets against drift and a
 
 | Command | Orchestrated | Solo | Purpose |
 |---|:-:|:-:|---|
-| `/spec` | ✅ | ✅ | Write the part spec → stop at GATE 1 |
-| `/plan` | ✅ | ✅ | Implementation plan from the spec → stop at GATE 2 |
-| `/checkpoint` | ✅ | ✅ | Small checkpoint commit on the part branch |
+| `/gate1` | ✅ | ✅ | Write the part spec → stop at GATE 1 |
+| `/gate2` | ✅ | ✅ | Implementation plan from the spec → stop at GATE 2 |
+| `/wip` | ✅ | ✅ | Small checkpoint commit on the part branch |
 | `/gate3` | ✅ | ✅ | Run test/lint/typecheck → compact evidence block |
-| `/review` | ✅ | ✅ | GATE 4: verifier subagent + approval ritual |
+| `/gate4` | ✅ | ✅ | GATE 4: verifier subagent + approval ritual |
 | `/new-part` | ✅ | — | (Manager) produce a fresh-session kickoff from the living-docs |
 | `/part` | — | ✅ | Drive a part end to end, stopping at every gate |
 | `/tidy` | — | ✅ | Sync docs to ground truth → declare "safe to compact" |

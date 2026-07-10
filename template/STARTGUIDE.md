@@ -1,6 +1,6 @@
 # STARTGUIDE — new project setup (for the human)
 
-> Source: vibe-playbook v7 `template/` (orchestrated profile). Total time ~10 min.
+> Source: vibe-playbook v8 `template/` (orchestrated profile). Total time ~10 min.
 > **Audience: software developers** — you will read specs/diffs, approve gates, and coordinate sessions.
 > **Vibe coder?** → `template-solo/` (one session; the agent drives the mechanics).
 > Process rules: [workflow.md](workflow.md) · rationale: the canonical playbook repo.
@@ -13,7 +13,7 @@ Easiest — via npm (renames `gitignore`, chmods hooks for you):
 ```bash
 npx vibe-playbook init orchestrated <new-project>
 cd <new-project>
-git init && git add -A && git commit -m "scaffold: playbook v7 template"
+git init && git add -A && git commit -m "scaffold: playbook v8 template"
 ```
 
 Or copy manually from a clone:
@@ -23,13 +23,16 @@ cp -R <vibe-playbook>/template/. <new-project>/
 cd <new-project>
 mv gitignore .gitignore        # shipped without the dot (npm packaging constraint)
 chmod +x .claude/hooks/*.sh
-git init && git add -A && git commit -m "scaffold: playbook v7 template"
+git init && git add -A && git commit -m "scaffold: playbook v8 template"
 ```
 
 ## 2. Adapt (5 min)
 
 - **CLAUDE.md:** project name/one-liner + Test/Lint/Typecheck commands (once the stack is locked).
 - **.claude/settings.json:** replace the `npm` examples in the allow list to match your stack.
+- **First run must be interactive:** Claude Code applies project permissions only after you accept the workspace-trust prompt — open `claude` in the directory once before any headless use.
+- **Verifier model:** pinned to a strong model (`opus`) because GATE 4 is rare and quality-critical; budget-sensitive? edit `model:` in `.claude/agents/verifier.md`.
+- **Protected branches:** main-guard protects `main`/`master` by default; using `trunk`/`develop`? set `VIBE_PROTECTED_BRANCHES` or edit the line at the top of `.claude/hooks/main-guard.sh`.
 - **Optional:**
   - Using the design track: **connect the Claude Design MCP** — the design decision-maker is Claude Design and the connection requires Claude Code **in the terminal (CLI)** (**mandatory**; run G work from the terminal, not desktop/IDE). Not using it: `docs/design/` can be deleted.
   - Want the **PreCompact safety net**: add to `settings.json` → `"hooks"`:
@@ -68,7 +71,7 @@ FIRST STEP: extract the questions you will ask me about the PRD — before doing
 - **New part:** `/new-part P-N` in the manager session → paste the kickoff block into a **fresh** session.
 - **Parallel parts:** each runs in its **own worktree directory** (the kickoff says so) — never run two sessions in one directory; that is the root of conflicts and code loss.
 - **Pasting secrets:** never paste real values into chat — "ready, in .env" is enough. If you paste one by accident, the agent applies the leak protocol (does not spread the value, deletes it wherever it was written, **recommends rotation** — chat history cannot be unsaid; rotation is the only permanent fix).
-- **Gates:** GATE 1/2 approval is yours · `/gate3` evidence + try it for real (GATE 3) · `/review` + approval marker (GATE 4).
+- **Gates:** GATE 1/2 approval is yours · `/gate3` evidence + try it for real (GATE 3) · `/gate4` + approval marker (GATE 4).
 - **GATE 4 marker:** on approval the session runs `echo <branch> > .claude/.gate4-ok` → merge → marker removed. main-guard blocks unmarked merges anyway.
 - **Ops work:** separate Ops session; sync via `NEEDS-FROM-USER.md` + `infra-state.md`.
 - **Phase close:** retro — 3 questions (workflow.md); PLAYBOOK-labeled lessons accumulate in `PLAYBOOK-FEEDBACK.md`.

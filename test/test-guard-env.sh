@@ -45,5 +45,14 @@ check 0 "bash: config.environment.ts"   "$(bash_j 'grep foo config.environment.t
 check 0 "Grep glob=*.environment.ts"    '{"tool_name":"Grep","tool_input":{"pattern":"x","glob":"*.environment.ts"}}'
 check 0 "bash: plain command"           "$(bash_j 'npm run test')"
 
+# --- reviewer-found edge case (v8): symlink to a secret file ---
+SYMDIR=$(mktemp -d)
+( cd "$SYMDIR" && echo "S=x" > .env && ln -s .env innocent-name && ln -s .env.example ok-link 2>/dev/null; touch .env.example )
+( cd "$SYMDIR" && printf '{"tool_name":"Read","tool_input":{"file_path":"innocent-name"}}' | bash "$HOOK" >/dev/null 2>&1 ); got=$?
+if [ "$got" -eq 2 ]; then PASS=$((PASS+1)); echo "  OK  Read via symlink to .env blocked"; else FAIL=$((FAIL+1)); echo "  XX  Read via symlink to .env — expected 2, got $got"; fi
+( cd "$SYMDIR" && printf '{"tool_name":"Read","tool_input":{"file_path":"ok-link"}}' | bash "$HOOK" >/dev/null 2>&1 ); got=$?
+if [ "$got" -eq 0 ]; then PASS=$((PASS+1)); echo "  OK  Read via symlink to .env.example free"; else FAIL=$((FAIL+1)); echo "  XX  symlink to .env.example — expected 0, got $got"; fi
+rm -rf "$SYMDIR"
+
 echo "RESULT: $PASS passed, $FAIL failed"
 exit $FAIL

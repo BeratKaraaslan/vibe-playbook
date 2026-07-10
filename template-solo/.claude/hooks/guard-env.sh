@@ -12,7 +12,7 @@ input=$(cat 2>/dev/null || true)
 command -v python3 >/dev/null 2>&1 || exit 0
 
 printf '%s' "$input" | python3 -c '
-import json, re, sys
+import json, os, re, sys
 
 I = re.IGNORECASE
 
@@ -44,8 +44,14 @@ bad = []
 
 for key in ("file_path", "path", "notebook_path"):
     v = ti.get(key)
-    if isinstance(v, str) and is_secret_path(v):
-        bad.append(v)
+    if isinstance(v, str):
+        if is_secret_path(v):
+            bad.append(v)
+        else:
+            # symlink defense: a differently-named link pointing at a secret file
+            rp = os.path.realpath(v)
+            if rp != os.path.abspath(v) and is_secret_path(rp):
+                bad.append(v + " -> " + rp)
 
 # Grep tool glob key: "*.env" style patterns can select real env files
 g = ti.get("glob")

@@ -1,0 +1,28 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: git identity for hook tests (temp repos)
+        run: git config --global user.email ci@ci && git config --global user.name ci
+      - name: hook test suites (both templates)
+        run: npm test
+      - name: CLI smoke (scaffold + gitignore restore + hook exec bits)
+        run: |
+          node bin/cli.js init solo /tmp/smoke
+          test -f /tmp/smoke/.gitignore
+          test ! -f /tmp/smoke/gitignore
+          test -x /tmp/smoke/.claude/hooks/guard-env.sh
+          test -f /tmp/smoke/.claude/.vibe-playbook
+          if node bin/cli.js init orchestrated /tmp/smoke --force; then echo "mix guard FAILED"; exit 1; else echo "mix guard OK"; fi
+      - name: tarball sanity
+        run: npm pack --dry-run

@@ -71,6 +71,21 @@ function main() {
   }
   const target = path.resolve(args[2] || ".");
 
+  // Profile-mix guard: overlaying a different profile leaves stale agents/commands behind.
+  // Profile switching is a manual 3-file swap by design (see README) — refuse even with --force.
+  const stampPath = path.join(target, ".claude", ".vibe-playbook");
+  if (fs.existsSync(stampPath)) {
+    const prev = fs.readFileSync(stampPath, "utf8").trim().split(/\s+/)[0];
+    if (prev && prev !== profile) {
+      console.error(
+        `This directory was scaffolded with the '${prev}' profile; refusing to overlay '${profile}' (even with --force).\n` +
+          `Mixing profiles leaves stale files behind. Switching is a manual 3-file swap by design:\n` +
+          `replace .claude/ + workflow.md + CLAUDE.md from the other template — the living-docs carry over unchanged.`
+      );
+      process.exit(1);
+    }
+  }
+
   // Collision check: never silently overwrite user files.
   const files = walk(src, src);
   const collisions = files
@@ -95,6 +110,11 @@ function main() {
     fs.renameSync(shippedGitignore, path.join(target, ".gitignore"));
   }
 
+  // Provenance stamp: which profile + version scaffolded this directory (also powers the mix guard).
+  const version = require("../package.json").version;
+  fs.mkdirSync(path.join(target, ".claude"), { recursive: true });
+  fs.writeFileSync(stampPath, `${profile} v${version}\n`);
+
   // Hooks must be executable (npm keeps the bit, but belt-and-suspenders).
   const hooksDir = path.join(target, ".claude", "hooks");
   if (fs.existsSync(hooksDir)) {
@@ -107,7 +127,7 @@ function main() {
   console.log(`Scaffolded the ${profile} profile into ${rel} (${files.length} files).
 
 Next steps:
-  1. cd ${rel === "." ? "" : rel + " && "}git init && git add -A && git commit -m "scaffold: playbook v7 ${profile} template"
+  1. cd ${rel === "." ? "" : rel + " && "}git init && git add -A && git commit -m "scaffold: playbook v8 ${profile} template"
   2. Open STARTGUIDE.md — adapt CLAUDE.md + .claude/settings.json (~5 min).
   3. Start a Claude Code session in that directory and paste the Phase 0 kickoff from STARTGUIDE.md.`);
 }

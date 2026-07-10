@@ -4,11 +4,12 @@
 > Domain-neutral: copied into every new project, specialized during Phase 0.
 > **Three first-class goals:** consistency · sustainability · context preservation.
 >
-> **Version: v7** (2026-07-10) · canonical home = this repo, copies are derivatives (§15) · changes → [CHANGELOG.md](CHANGELOG.md)
+> **Version: v8** (2026-07-10) · canonical home = this repo, copies are derivatives (§15) · changes → [CHANGELOG.md](CHANGELOG.md)
 > **Since v3:** the skeleton is no longer prose — [`template/`](template/) is real files; new project = copy + `template/STARTGUIDE.md` (§14).
 > **Since v5:** two profiles — [`template/`](template/) (**orchestrated**: multi-session) · [`template-solo/`](template-solo/) (**solo**: one session + subagents, §17).
 > **Since v6:** the whole repo is English and ships as an npm package (`npx vibe-playbook init <solo|orchestrated>`).
 > **Since v7:** the first real §15 backflow — field lessons from the origin project's retro (design-track mechanics · spine/prompts doc classes · the PR-flow note · script>runbook · anti-gold-plating).
+> **Since v8:** the first external-review intake — hook hardening (symlink/flag/cherry-pick/exact-branch/configurable branches), gate-uniform command names (`/gate1–4`, `/wip` — no Claude Code built-in shadowing), packaging fixes (tests ship, CI, profile stamp).
 
 ---
 
@@ -237,13 +238,17 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 │  │                   #   direct paths, subcommands, globs (.env*), case variants (.ENV), Grep globs
 │  │                   #   (.env.example stays fully allowed)
 │  ├─ secret-scan.sh   # UserPromptSubmit: if the user message smells like a secret, reminds the leak protocol (§9)
-│  ├─ main-guard.sh    # PreToolUse(Bash): physically blocks CODE commits on main + GATE4-unmarked merges
-│  │                   #   (docs-only commits on main allowed · marker: human approval → .claude/.gate4-ok)
+│  ├─ main-guard.sh    # PreToolUse(Bash): physically blocks CODE commits + cherry-picks + GATE4-unmarked
+│  │                   #   merges on protected branches (main/master default; VIBE_PROTECTED_BRANCHES to
+│  │                   #   extend) · exact-branch marker match · flag forms (git -C .) covered ·
+│  │                   #   docs-only commits stay free · marker: human approval → .claude/.gate4-ok
 │  └─ pre-compact.sh   # (OPTIONAL — by choice at project start) PreCompact: ground snapshot + notification (§10)
 ├─ agents/             # verifier (GATE 4, §4.3) — the MINIMAL set; spec-writer/test-writer/design-guardian
 │                      #   are added only once proven load-bearing (every agent is carried maintenance).
 │                      #   verifier: pin a strong model + grow a project-specific checklist in it (Phase 0)
-└─ commands/           # /spec · /plan · /checkpoint · /gate3 (GATE 3 mechanical proof) · /review · /new-part
+└─ commands/           # /gate1 (spec) · /gate2 (plan) · /gate3 (mechanical proof) · /gate4 (review) ·
+                       #   /wip (checkpoint commit) · /new-part — names deliberately avoid Claude Code
+                       #   built-ins (/plan, /review, /checkpoint would shadow them)
 ```
 
 ---

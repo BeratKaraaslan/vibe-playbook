@@ -1,6 +1,6 @@
 # workflow.md — working rules (normative summary)
 
-> **← playbook v7 (orchestrated profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
+> **← playbook v8 (orchestrated profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
 > Project-specific deviations go into "Project deviations" at the bottom — do not edit the body.
 > Abbreviation: GATE 1–4 = the human gates.
 
@@ -18,9 +18,9 @@
 ## Part cycle
 
 ```
-/spec → 🚦GATE 1 · /plan → 🚦GATE 2 · IMPL (checkpoint commits on the branch) ·
+/gate1 → 🚦GATE 1 · /gate2 → 🚦GATE 2 · IMPL (checkpoint commits on the branch) ·
 /gate3 → 🚦GATE 3 (evidence block + human tries it for real) ·
-/review → 🚦GATE 4 (verifier subagent + HUMAN approval) · MERGE + docs → new session
+/gate4 → 🚦GATE 4 (verifier subagent + HUMAN approval) · MERGE + docs → new session
 ```
 
 - **Gate profile** (written in the spec): small/low-risk part → **GATES 1+2 combine into one approval**; money/auth/data-loss surface → **never combined**, full profile.
