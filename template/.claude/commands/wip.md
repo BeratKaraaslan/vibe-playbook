@@ -1,5 +1,6 @@
 ---
 description: Small checkpoint commit on the part branch
+disable-model-invocation: true
 ---
 
 Make a checkpoint commit:

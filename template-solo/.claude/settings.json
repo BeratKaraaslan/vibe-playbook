@@ -28,6 +28,14 @@
       "Bash(git reset:*)"
     ],
     "deny": [
+      "Edit(.claude/settings.json)",
+      "Write(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Write(.claude/settings.local.json)",
+      "Edit(.claude/hooks/**)",
+      "Write(.claude/hooks/**)",
+      "Edit(.claude/commands/**)",
+      "Write(.claude/commands/**)",
       "Read(**/.env)",
       "Read(**/.env.local)",
       "Read(**/.env.development)",

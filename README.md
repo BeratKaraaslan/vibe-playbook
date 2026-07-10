@@ -17,7 +17,7 @@ npx vibe-playbook init orchestrated my-project  # multi-session profile
 
 The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version (`.claude/.vibe-playbook`) — it refuses to overlay a different profile onto an existing scaffold (that would leave stale files mixed in). No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
 
-Tip: pin the version for reproducible scaffolds — `npx vibe-playbook@8 init solo my-project`. A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
+Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.1.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
 
 ## Pick a profile
 
@@ -57,7 +57,7 @@ IMPL    →            checkpoint commits on a wip/ branch
 
 *(Command names deliberately avoid Claude Code built-ins — the earlier `/plan`, `/review`, `/checkpoint` names could shadow them.)*
 
-**Nothing enters a protected branch without GATE 4** — not a convention: the `main-guard` hook physically blocks code commits, cherry-picks, and unmarked merges on protected branches (`main`/`master` by default; extend via `VIBE_PROTECTED_BRANCHES`). Merging via GitHub PRs instead? The hook never sees those merges — use branch protection there.
+**Nothing enters a protected branch without GATE 4** — the `main-guard` hook blocks the accidental paths: code commits (untracked files count), compound commands containing a commit, cherry-picks, and unmarked merges (exact-branch marker) on protected branches (`main`/`master` default; `VIBE_PROTECTED_BRANCHES` to extend). It is an accident guard, not a boundary — for hard guarantees use GitHub/GitLab **branch protection** (a PR merge never touches this hook).
 
 ## Quick start — Orchestrated (`template/`)
 
@@ -104,12 +104,12 @@ Full guide: [`template-solo/STARTGUIDE.md`](template-solo/STARTGUIDE.md)
 
 | Hook | Event | What it does |
 |---|---|---|
-| `guard-env.sh` | PreToolUse | Physically blocks **any** access to `.env*` — direct tool reads/writes AND Bash subcommands (`cat`/`cp`/`source`/redirects/scripts), glob forms (`.env*`), case variants (`.ENV`), Grep globs. Only `.env.example` is fully accessible. On a block the agent must stop and ask you — env values are always placed by the human |
+| `guard-env.sh` | PreToolUse | Blocks the **common accidental paths** to `.env*` (any suffix depth): direct tool reads/writes, plain Bash subcommands, globs, case variants, direct symlinks on tool paths, Grep globs. Only `.env.example` stays fully accessible; fail-closed if python3 is missing. An **accident guard, not a security boundary** — a script/subprocess that opens the file itself is beyond string matching (use Claude Code sandboxing for OS-level limits). On a block the agent must stop and ask you |
 | `main-guard.sh` | PreToolUse (Bash) | Blocks code commits, cherry-picks, and unmarked merges on protected branches (`main`/`master` default, `VIBE_PROTECTED_BRANCHES` to extend); exact-branch GATE 4 marker (`.claude/.gate4-ok`); flag forms (`git -C . commit`) covered; docs-only commits stay free |
 | `secret-scan.sh` | UserPromptSubmit | If your message looks like it contains a secret (connection string, API key, JWT, private key), it reminds the model of the **leak protocol**: never repeat the value, delete it wherever it was written, recommend rotation — chat history cannot be unsaid |
 | `pre-compact.sh` | PreCompact | Snapshots branch/status/log to `docs/archive/compact-snapshots.md` before any compaction (optional in orchestrated, **default-on in solo**) |
 
-Hooks apply to subagent tool calls too. They are safety nets against drift and accidents — not guarantees against a malicious agent.
+Hooks apply to subagent tool calls too, and fail closed if python3 is missing. They are **accident guards** against drift and mistakes — not security boundaries: a determined process, a helper script, or a PR-side merge is beyond string matching. For hard guarantees: branch protection, clean-runner CI, and Claude Code sandboxing.
 
 ## Commands
 
@@ -128,7 +128,7 @@ Hooks apply to subagent tool calls too. They are safety nets against drift and a
 
 ```
 PLAYBOOK.md        # the full methodology + design rationale
-CHANGELOG.md       # versioned process changes (v1 → v6)
+CHANGELOG.md       # versioned process changes (v1 → v8)
 README.md          # this file
 package.json       # npm package (major version = playbook version)
 bin/cli.js         # zero-dependency scaffolder (npx vibe-playbook init …)

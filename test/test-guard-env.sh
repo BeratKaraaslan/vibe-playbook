@@ -45,6 +45,12 @@ check 0 "bash: config.environment.ts"   "$(bash_j 'grep foo config.environment.t
 check 0 "Grep glob=*.environment.ts"    '{"tool_name":"Grep","tool_input":{"pattern":"x","glob":"*.environment.ts"}}'
 check 0 "bash: plain command"           "$(bash_j 'npm run test')"
 
+# --- external-review v8.1 regressions ---
+check 2 "multi-suffix .env.local.backup blocked" '{"tool_name":"Read","tool_input":{"file_path":".env.local.backup"}}'
+check 2 "bash: cat .env.production.enc blocked" "$(bash_j 'cat .env.production.enc')"
+check 2 "mixed Grep glob {.env,.env.example} blocked" '{"tool_name":"Grep","tool_input":{"pattern":"x","path":".","glob":"{.env,.env.example}"}}'
+check 0 "Grep glob *.env.example still free" '{"tool_name":"Grep","tool_input":{"pattern":"x","glob":"*.env.example"}}'
+
 # --- reviewer-found edge case (v8): symlink to a secret file ---
 SYMDIR=$(mktemp -d)
 ( cd "$SYMDIR" && echo "S=x" > .env && ln -s .env innocent-name && ln -s .env.example ok-link 2>/dev/null; touch .env.example )

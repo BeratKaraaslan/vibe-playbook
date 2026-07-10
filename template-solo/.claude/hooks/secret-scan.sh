@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # UserPromptSubmit hook: if the user message contains a secret-looking value, reminds the model
 # of the leak protocol (CLAUDE.md rule 3) at exactly that moment. DOES NOT BLOCK — the action is the model's.
-# (False-positive cost ~zero: only one reminder line is added.)
+# This is a low-cost reminder, NOT a DLP layer: it scans only the user prompt (not tool output,
+# file contents or diffs) and pattern lists are never complete — pair with real secret scanning
+# (gitleaks/push protection) where it matters.
 # NOTE: the python block sits inside bash single quotes — NEVER use ' inside the python code.
 set -u
 input=$(cat 2>/dev/null || true)
@@ -19,11 +21,14 @@ p = d.get("prompt", "") or ""
 pats = [
     r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp|mssql)://[^\s/@]+:[^\s@]+@",  # conn-string with userinfo
     r"\bsk-[A-Za-z0-9_-]{16,}",
-    r"\bAKIA[0-9A-Z]{16}\b",
+    r"\bsk_(?:live|test)_[A-Za-z0-9]{10,}",          # Stripe
+    r"\bAKIA[0-9A-Z]{16}\b",                          # AWS
+    r"\bxox[baprs]-[A-Za-z0-9-]{10,}",                # Slack
+    r"\bAIza[0-9A-Za-z_\-]{30,}",                     # Google API
     r"\bghp_[A-Za-z0-9]{30,}",
     r"\bgithub_pat_[A-Za-z0-9_]{20,}",
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
-    r"\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}",  # JWT
+    r"\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}",   # JWT
     r"(?i)\b(api[_-]?key|secret|token|password|passwd)\b\s*[=:]\s*\S{8,}",
 ]
 if any(re.search(x, p) for x in pats):

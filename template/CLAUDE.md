@@ -7,6 +7,7 @@
 <one sentence — filled during Phase 0>
 
 - Stack: <Phase 0> · Test: `<command>` · Lint: `<command>` · Typecheck: `<command>`
+- Base branch: `main` *(using trunk/develop? update here AND set VIBE_PROTECTED_BRANCHES for the main-guard hook)*
 
 ## Scale & pragmatism
 

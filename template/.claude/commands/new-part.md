@@ -1,6 +1,7 @@
 ---
 description: (Manager) Produce a fresh-session kickoff draft from the living-docs
 argument-hint: <part-id>
+disable-model-invocation: true
 ---
 
 Produce the kickoff for part $ARGUMENTS.

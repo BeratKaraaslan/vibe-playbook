@@ -5,7 +5,7 @@
 > the human hands this file back to the canonical **vibe-playbook** repo, where it drives the next
 > playbook version (§15 backflow). Models keep improving — this file is how the workflow keeps up.
 >
-> ← playbook v7 · profile: <orchestrated|solo — Phase 0 fills> · project: <name> · started: <date>
+> ← playbook v8 · profile: <orchestrated|solo — Phase 0 fills> · project: <name> · started: <date>
 
 ## Rules for WRITING entries (project side)
 
@@ -18,6 +18,7 @@
   - the model clearly **no longer needs a crutch** the playbook imposes — or needs one it lacks (model-shift)
 - Phase retro: the 3 questions' **PLAYBOOK-labeled answers land here** (PROJECT-labeled ones go to workflow.md "Project deviations").
 - Short and concrete; evidence beats opinion.
+- **Before handing back: REDACT.** Scan the log for client names, private paths/URLs, incident details, anything secret-shaped — methodology lessons need no identifying detail.
 
 ## Rules for PROCESSING this file (canonical-repo side)
 

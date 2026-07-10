@@ -70,6 +70,35 @@ export VIBE_PROTECTED_BRANCHES="main master trunk"
 check 2 "trunk protected via VIBE_PROTECTED_BRANCHES" "$(j 'git commit -m x')"
 unset VIBE_PROTECTED_BRANCHES
 git restore --staged app.js; git checkout -q -- app.js
+git switch -q main
+
+# --- external-review v8.1 regressions ---
+j2() { printf '{"tool_name":"Bash","tool_input":{"command":%s}}' "$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1")"; }
+
+check 2 "compound create+commit blocked (TOCTOU guard)" "$(j2 'echo y >> app.js && git add app.js && git commit -m code')"
+
+echo brandnew > brand-new.js
+check 2 "untracked code file counts as offender" "$(j2 'git commit -m docs')"
+rm brand-new.js
+
+mkdir -p .claude/hooks
+echo weakened > .claude/hooks/main-guard.sh
+git add -A
+check 2 ".claude control-plane commit is NOT docs-only" "$(j2 'git commit -m docs')"
+git reset -q; rm -rf .claude/hooks
+
+echo "wip/P-1" > .claude/.gate4-ok
+check 0 "quoted merge target allowed (no false block)" "$(j2 'git merge "wip/P-1"')"
+check 2 "marker hidden in shell comment still blocked" "$(j2 'git merge wip/P-10 # wip/P-1')"
+rm .claude/.gate4-ok
+
+# git -C targets the SUB repo, not the hook cwd
+mkdir -p sub && ( cd sub && git init -qb main && git config user.email t@t.t && git config user.name t \
+  && echo m > r.md && git add -A && git commit -qm i && echo code > c.js && git add c.js )
+git switch -qc feature 2>/dev/null || git switch -q feature
+check 2 "git -C checks the target repo (protected sub, unprotected cwd)" "$(j2 'git -C sub commit -m x')"
+git switch -q main
+rm -rf sub
 
 cd /; rm -rf "$REPO"
 echo "RESULT: $PASS passed, $FAIL failed"

@@ -1,5 +1,6 @@
 ---
 description: Context-hygiene checkpoint — sync docs to ground truth, then declare it safe to /compact or /clear
+disable-model-invocation: true
 ---
 
 Run the tidy ritual (after a merge, an ops block, or on request):

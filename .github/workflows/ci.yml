@@ -4,6 +4,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,13 +19,15 @@ jobs:
         run: git config --global user.email ci@ci && git config --global user.name ci
       - name: hook test suites (both templates)
         run: npm test
-      - name: CLI smoke (scaffold + gitignore restore + hook exec bits)
+      - name: CLI smoke (scaffold + gitignore restore + hook exec bits + guards)
         run: |
           node bin/cli.js init solo /tmp/smoke
           test -f /tmp/smoke/.gitignore
           test ! -f /tmp/smoke/gitignore
           test -x /tmp/smoke/.claude/hooks/guard-env.sh
           test -f /tmp/smoke/.claude/.vibe-playbook
-          if node bin/cli.js init orchestrated /tmp/smoke --force; then echo "mix guard FAILED"; exit 1; else echo "mix guard OK"; fi
+          if node bin/cli.js init orchestrated /tmp/smoke; then echo "mix guard FAILED"; exit 1; else echo "mix guard OK"; fi
+          if node bin/cli.js init solo /tmp/smoke; then echo "collision guard FAILED"; exit 1; else echo "collision guard OK"; fi
+          if node bin/cli.js init solo /tmp/smoke2 --force; then echo "unknown-option guard FAILED"; exit 1; else echo "no-force OK"; fi
       - name: tarball sanity
         run: npm pack --dry-run

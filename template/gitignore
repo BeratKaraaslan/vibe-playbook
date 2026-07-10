@@ -2,5 +2,6 @@
 .env.*
 !.env.example
 .claude/.gate4-ok
+.claude/settings.local.json
 .DS_Store
 node_modules/

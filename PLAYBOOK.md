@@ -234,14 +234,14 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 ├─ settings.json       # permissions: allow (safe read/build/test) · ask (commit/merge/push/checkout…) ·
 │                      #   deny (.env reads, rm -rf, force-push, git clean) + hook registrations
 ├─ hooks/
-│  ├─ guard-env.sh     # PreToolUse: physically blocks secret-file (.env*) access in every form —
-│  │                   #   direct paths, subcommands, globs (.env*), case variants (.ENV), Grep globs
-│  │                   #   (.env.example stays fully allowed)
+│  ├─ guard-env.sh     # PreToolUse: blocks the common ACCIDENTAL paths to secret files (.env*, any suffix
+│  │                   #   depth) — direct paths, subcommands, globs, case variants, direct symlinks, Grep
+│  │                   #   globs (.env.example stays allowed) · accident guard, NOT a security boundary
 │  ├─ secret-scan.sh   # UserPromptSubmit: if the user message smells like a secret, reminds the leak protocol (§9)
-│  ├─ main-guard.sh    # PreToolUse(Bash): physically blocks CODE commits + cherry-picks + GATE4-unmarked
-│  │                   #   merges on protected branches (main/master default; VIBE_PROTECTED_BRANCHES to
-│  │                   #   extend) · exact-branch marker match · flag forms (git -C .) covered ·
-│  │                   #   docs-only commits stay free · marker: human approval → .claude/.gate4-ok
+│  ├─ main-guard.sh    # PreToolUse(Bash): blocks CODE commits (untracked count) + compound-commit TOCTOU +
+│  │                   #   cherry-picks + GATE4-unmarked merges on protected branches (VIBE_PROTECTED_BRANCHES)
+│  │                   #   · exact-branch marker · git -C targets the RIGHT repo · docs-only commits free
+│  │                   #   (.claude/ is control-plane, NOT docs) · accident guard — PR merges need branch protection
 │  └─ pre-compact.sh   # (OPTIONAL — by choice at project start) PreCompact: ground snapshot + notification (§10)
 ├─ agents/             # verifier (GATE 4, §4.3) — the MINIMAL set; spec-writer/test-writer/design-guardian
 │                      #   are added only once proven load-bearing (every agent is carried maintenance).

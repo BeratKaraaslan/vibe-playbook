@@ -33,6 +33,7 @@ git init && git add -A && git commit -m "scaffold: playbook v8 solo template"
 - **First run must be interactive:** Claude Code applies project permissions (including the wide ones above) only after you accept the workspace-trust prompt — open `claude` in the directory once before any headless use.
 - **Verifier model:** pinned to a strong model (`opus`) because GATE 4 is rare and quality-critical; budget-sensitive? edit `model:` in `.claude/agents/verifier.md`.
 - **Protected branches:** main-guard protects `main`/`master` by default; using `trunk`/`develop`? set `VIBE_PROTECTED_BRANCHES` or edit the line at the top of `.claude/hooks/main-guard.sh`.
+- **High-assurance work:** the hooks are accident guards, NOT security boundaries. For hard guarantees add GitHub/GitLab **branch protection**, run GATE 3 / verifier tests in a **clean CI runner** (a reviewed branch's test code is that branch's code), and consider **Claude Code sandboxing** for OS-level file/network limits.
 - **PreCompact hook is ON by default** in solo mode (a long session will compact; the snapshot safety net should be there). Remove it from settings.json only if you really want to.
 - Using the design track: **connect the Claude Design MCP** — the design decision-maker is Claude Design; the connection requires Claude Code **in the terminal (CLI)** (mandatory). Not using it: delete `docs/design/`.
 

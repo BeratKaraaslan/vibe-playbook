@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
-# PreToolUse hook: physically blocks ANY access to secret files (.env*) — CLAUDE.md rule 3, "hook > instruction".
-# Covers: direct tool paths (Read/Edit/Write/Grep), Bash subcommands (cat/cp/source/redirects/scripts),
-# glob forms (.env*, .env.?) and case variants (.ENV — macOS FS is case-insensitive).
+# PreToolUse hook: blocks the COMMON ACCIDENTAL paths to secret files (.env*) — CLAUDE.md rule 3,
+# "hook > instruction". Covers: direct tool paths (Read/Edit/Write/Grep), plain Bash subcommands
+# (cat/cp/source/redirects), glob forms (.env*, .env.local.backup), case variants (.ENV — macOS FS
+# is case-insensitive), direct symlinks on tool paths, and Grep globs.
 # ONLY .env.example / .env.sample / .env.template are fully allowed.
+# This is an ACCIDENT GUARD, not a security boundary: a script or subprocess that opens the file
+# itself (python/node/helper .sh, hardlinks, variable-built paths) is beyond string matching —
+# for OS-level guarantees use Claude Code sandboxing + keep secrets outside the working tree.
+# Fail-closed: if python3 is missing, every guarded call is blocked (python3 is a stated requirement).
 # On a block the model must STOP and ask the user — never retry via another path.
-# This is a safety net against accidents/drift, not hermetic against a malicious agent —
-# the settings.json deny list + CLAUDE.md rule 3 are the other layers.
 # NOTE: the python block sits inside bash single quotes — NEVER use ' inside the python code (use \x27).
 set -u
 input=$(cat 2>/dev/null || true)
-command -v python3 >/dev/null 2>&1 || exit 0
+if ! command -v python3 >/dev/null 2>&1; then
+  printf 'BLOCKED (guard-env): python3 is required by the hooks and was not found — install python3 (or knowingly remove the hooks).\n' >&2
+  exit 2
+fi
 
 printf '%s' "$input" | python3 -c '
 import json, os, re, sys
@@ -20,15 +26,15 @@ def allowed_example(t):
     return re.search(r"\.env\.(example|sample|template)$", t, I)
 
 def is_secret_path(p):
-    # exact path: .env or .env.<suffix>, except the allowed example forms
-    return (re.search(r"(^|/)\.env(\.[\w\-]+)?$", p, I)
+    # exact path: .env with ANY number of suffix segments (.env.local.backup), except allowed forms
+    return (re.search(r"(^|/)\.env(\.[\w\-]+)*$", p, I)
             and not allowed_example(p))
 
 def is_secret_token(t):
     # command token: may carry glob chars that expand to real env files (.env*, .env.*, .env?)
     if allowed_example(t):
         return False
-    if re.search(r"(^|/)\.env(\.[\w\-]+)?$", t, I):
+    if re.search(r"(^|/)\.env(\.[\w\-]+)*$", t, I):
         return True
     if re.search(r"(^|/)\.env[\w.\-]*[*?]", t, I):
         return True
@@ -53,10 +59,14 @@ for key in ("file_path", "path", "notebook_path"):
             if rp != os.path.abspath(v) and is_secret_path(rp):
                 bad.append(v + " -> " + rp)
 
-# Grep tool glob key: "*.env" style patterns can select real env files
+# Grep glob: block if ANY env-ish token in the glob is a real env form
+# (an allowed .env.example elsewhere in the same glob must NOT launder the rest)
 g = ti.get("glob")
-if isinstance(g, str) and re.search(r"\.env(?![a-z])", g, I) and not re.search(r"\.env\.(example|sample|template)", g, I):
-    bad.append(g)
+if isinstance(g, str):
+    # (?![A-Za-z0-9]) keeps ".environment.ts" out: after ".env" only a dot/glob/end counts
+    toks = re.findall(r"\.env(?![A-Za-z0-9])[\w.\-]*", g, I)
+    if any(not allowed_example(t) for t in toks):
+        bad.append(g)
 
 cmd = ti.get("command")
 if isinstance(cmd, str):
@@ -69,7 +79,7 @@ if isinstance(cmd, str):
 if bad:
     sys.stderr.write(
         "BLOCKED (guard-env): secret file access: %s. "
-        "The .env file is OFF-LIMITS in every form (direct read, subcommand, copy, glob, script); "
+        "The .env file is OFF-LIMITS (direct read, subcommand, copy, glob, script); "
         "only .env.example is accessible. STOP NOW: report this to the user and WAIT for their "
         "approval — do NOT retry via another path. Env values are provided by the human "
         "(NEEDS-FROM-USER.md)." % ", ".join(sorted(set(bad))))

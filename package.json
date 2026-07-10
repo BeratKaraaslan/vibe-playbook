@@ -1,6 +1,6 @@
 {
   "name": "vibe-playbook",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "description": "Vibe-coding playbook for Claude Code — methodology + two ready-to-copy project templates: orchestrated (multi-session, for software developers) and solo (single session + subagents, for vibe coders), with human gates, living-docs, and enforcement hooks.",
   "bin": {
     "vibe-playbook": "bin/cli.js"
