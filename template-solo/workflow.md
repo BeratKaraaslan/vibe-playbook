@@ -51,6 +51,7 @@ The 13 rules in CLAUDE.md apply at all times. Rules 1 and 3 are physical: **main
 
 - **STATE** (progress · issues · architecture · data-model · infra-state · specs) = **EDIT**, stays small, "current truth". **ARCHIVE** (docs/archive/*) = **APPEND**, never auto-loaded (on request only).
 - **Optional classes (created in Phase 0 when the project needs them):** `shared-spine.md` — multi-module products: the cross-part CONTRACT (common flow + interfaces); specs then define **only deltas** · `prompts/` — LLM products: **runtime asset, not a living doc** (versioned `.vN` files, agent-maintained; every output stores promptVersion+model; draft the base persona BEFORE the first LLM part).
+- **`PLAYBOOK-FEEDBACK.md`** = APPEND, **methodology only** (how the workflow behaved: friction · theater gates · bypasses+why · hook misfires · model-shift notes). Never auto-loaded; write the moment you observe. Handed back to the canonical repo at project end — its header carries the intake protocol.
 - **Rotation:** resolved issue → one line in archive/changelog · finished phase → one line in progress + `phase-N-summary.md` · **bloat budget** ~150–200 lines → prune proactively + notify. The budget is **content, not line count**: keep the progress "Now" section to 3–5 bullets; overflow → issues/archive.
 - **Golden rule:** structural decisions are not mentioned — they are **written in**. In solo mode this is doubly critical: the docs are the only memory that survives compaction and `/clear`.
 
@@ -68,7 +69,7 @@ Ops work happens inline in this session (there is no separate ops session), but 
 2. Which gate was approved **without reading**?
 3. Which rule was **violated/bypassed** — and why?
 
-→ **PROJECT** lesson = "Project deviations" / the relevant spec · **PLAYBOOK** lesson = changelog candidate for the canonical repo.
+→ **PROJECT** lesson = "Project deviations" / the relevant spec · **PLAYBOOK** lesson = an entry in `PLAYBOOK-FEEDBACK.md` (handed back to the canonical repo at project end).
 **Calibration:** a gate repeatedly approved without reading gets lightened; gates that catch real things stay heavy.
 
 ## Project deviations

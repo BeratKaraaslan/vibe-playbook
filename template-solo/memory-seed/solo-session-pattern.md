@@ -13,6 +13,7 @@ Solo orchestrator role (workflow.md): plans, dispatches subagents, verifies, doc
 - **Batch dispatches:** small part = the whole approved plan in one implementer dispatch; larger = 2–4 step batches; checkpoint commit per step.
 - **Tidy ritual:** after every merge and ops block run `/tidy`, then offer the reset — recommend `/clear` at part boundaries (the solo "fresh session"; resume from docs + memory), `/compact` mid-part. Restart test: after `/clear` you must be able to resume from CLAUDE.md + living-docs + this memory alone.
 - **Serial:** one active part, one branch, one writing subagent at a time.
+- **Retro & backflow:** 3 questions at phase close (workflow.md); PLAYBOOK-labeled lessons → an entry in `PLAYBOOK-FEEDBACK.md`. Also add an entry there the MOMENT you observe methodology friction (bypass / theater gate / hook misfire) — do not wait for the retro.
 
 **Why:** the solo session lives long and WILL compact; docs + memory are the durable layers, context is only a cache.
 **How to apply:** every solo session — including right after `/clear` — works under this contract; this memory survives clearing.

@@ -19,6 +19,7 @@
 - `architecture.md` / `data-model.md` → when relevant
 - `infra-state.md` → ops/deploy work
 - `workflow.md` → process questions
+- `PLAYBOOK-FEEDBACK.md` → at retros, or the moment a methodology observation occurs (never project state)
 - `docs/archive/*` · `docs/ops/*` → **NEVER automatically** — only on request
 
 ## Critical rules (NEVER violate)

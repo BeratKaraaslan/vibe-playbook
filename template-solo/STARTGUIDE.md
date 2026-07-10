@@ -64,4 +64,5 @@ FIRST STEP: extract the questions you will ask me about the PRD — before doing
 - **Pasting secrets:** never paste real values into chat — "ready, in .env" is enough. If you paste one by accident, the agent applies the leak protocol (does not spread it, deletes it where written, **recommends rotation**).
 - **Gates:** GATE 1/2 approval is yours · `/gate3` evidence + try it for real (GATE 3) · `/review` + approval marker (GATE 4; main-guard blocks unmarked merges anyway).
 - **Ops work:** inline, same session — runbook + infra-state discipline unchanged; a finished ops block is a natural compact point.
-- **Phase close:** retro — 3 questions (workflow.md).
+- **Phase close:** retro — 3 questions (workflow.md); PLAYBOOK-labeled lessons accumulate in `PLAYBOOK-FEEDBACK.md`.
+- **Project end:** hand `PLAYBOOK-FEEDBACK.md` back to the canonical vibe-playbook repo (open a session there, give it the file) — your workflow improves with every project; the intake protocol inside the file prevents blind application.

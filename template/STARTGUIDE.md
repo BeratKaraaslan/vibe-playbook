@@ -71,4 +71,5 @@ FIRST STEP: extract the questions you will ask me about the PRD — before doing
 - **Gates:** GATE 1/2 approval is yours · `/gate3` evidence + try it for real (GATE 3) · `/review` + approval marker (GATE 4).
 - **GATE 4 marker:** on approval the session runs `echo <branch> > .claude/.gate4-ok` → merge → marker removed. main-guard blocks unmarked merges anyway.
 - **Ops work:** separate Ops session; sync via `NEEDS-FROM-USER.md` + `infra-state.md`.
-- **Phase close:** retro — 3 questions (workflow.md).
+- **Phase close:** retro — 3 questions (workflow.md); PLAYBOOK-labeled lessons accumulate in `PLAYBOOK-FEEDBACK.md`.
+- **Project end:** hand `PLAYBOOK-FEEDBACK.md` back to the canonical vibe-playbook repo (open a session there, give it the file) — your workflow improves with every project; the intake protocol inside the file prevents blind application.
