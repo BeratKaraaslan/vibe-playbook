@@ -27,6 +27,8 @@ git init && git add -A && git commit -m "scaffold: playbook v8 solo template"
 
 ## 2. Adapt (5 min)
 
+> The mechanical minimum is below. The DEEP adaptation — domain-expert agents, verifier invariants, stack allow-list, optional doc classes — happens inside Phase 0 via **`/adapt`** (its proposal rides the Phase 0 gate; re-run it when a new domain surface appears mid-project).
+
 - **CLAUDE.md:** project name/one-liner + Test/Lint/Typecheck commands (once the stack is locked).
 - **.claude/settings.json:** replace the `npm` examples in the allow list to match your stack.
 - **Permissions are deliberately WIDE in this profile** (file edits, `git commit`, `git merge` are pre-allowed) so the agent flows between gates without prompting you — your control points are the GATES; the invariants are hook-guarded (main-guard, guard-env). Prefer more prompts? Tighten the allow list.
@@ -53,6 +55,9 @@ PHASE 0 = PLANNING — no code, no subagent dispatches. Order of work:
 3. Split the work into parts (P code / G design) → progress.md table + module-spec skeletons
 4. open-questions.md + NEEDS-FROM-USER.md: everything left open
    (DO NOT ASSUME — ask me for product decisions)
+5. Run /adapt — derive the project-specific .claude configuration (domain experts?
+   verifier invariants? stack allow-list? optional doc classes?); the proposal joins
+   the approval package below
 
 All docs in English (CLAUDE.md rule 11); chat follows my language.
 EXIT 🚦 PHASE 0 GATE (the biggest one): present all docs for my approval; decisions lock here.

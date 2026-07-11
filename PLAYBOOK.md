@@ -75,7 +75,7 @@ MERGE + docs          → the ONLY way into main (enforced by the main-guard hoo
 
 ## 3. Phase & part structure
 
-- **Phase 0 = PLANNING (no code):** the Manager produces all docs → 🚦 the biggest gate (decisions lock here). Output: the living-docs set + `phase-kickoffs.md` (draft commands for later phases).
+- **Phase 0 = PLANNING (no code):** the Manager produces all docs → 🚦 the biggest gate (decisions lock here). Output: the living-docs set + `phase-kickoffs.md` (draft commands for later phases). Phase 0 ends by deriving the **project-specific `.claude/` configuration** via **`/adapt`** — domain-expert agents · verifier invariants (the placeholder must not survive Phase 0 empty) · the stack's real allow-list · optional doc classes (spine/prompts/design/go-live). The proposal rides the Phase 0 gate; the §12 minimal-set rule applies (every agent is carried maintenance — items are approved one by one). Re-run `/adapt` when a new domain surface appears mid-project.
 - **Phase N:** split into parts — code parts `P1, P2…` · design `G1, G2…` · ops work in its own flow. **Partitioning rule:** parts that will run in parallel must have **disjoint file scopes** (client/backend etc.); parts touching the same files run sequentially, not in parallel — the conflict/code-loss risk is cut at partitioning time.
 - Every part starts in a **fresh session** (clean context). The Manager refines the part's kickoff.
 
@@ -247,8 +247,8 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 │                      #   are added only once proven load-bearing (every agent is carried maintenance).
 │                      #   verifier: pin a strong model + grow a project-specific checklist in it (Phase 0)
 └─ commands/           # /gate1 (spec) · /gate2 (plan) · /gate3 (mechanical proof) · /gate4 (review) ·
-                       #   /wip (checkpoint commit) · /new-part — names deliberately avoid Claude Code
-                       #   built-ins (/plan, /review, /checkpoint would shadow them)
+                       #   /wip (checkpoint commit) · /new-part · /adapt (Phase 0: derive the project-specific
+                       #   configuration) — names deliberately avoid Claude Code built-ins
 ```
 
 ---
