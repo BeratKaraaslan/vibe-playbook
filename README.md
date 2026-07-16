@@ -17,7 +17,7 @@ npx vibe-playbook init orchestrated my-project  # multi-session profile
 
 The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version (`.claude/.vibe-playbook`) — it refuses to overlay a different profile onto an existing scaffold (that would leave stale files mixed in). No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
 
-Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.1.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
+Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.2.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
 
 ## Pick a profile
 
