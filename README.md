@@ -4,21 +4,21 @@ A reusable methodology + two ready-to-copy project templates for AI-driven ("vib
 
 **consistency · sustainability · context preservation**
 
-The core problem this solves: LLM sessions lose context, drift, and confabulate. The fix here is structural, not hopeful — state lives on disk (living-docs), critical rules are physically enforced (hooks), humans approve at defined gates, and session context is treated as a disposable cache.
+The core problem this solves: LLM sessions lose context, drift, and confabulate. The fix here is structural, not hopeful — state lives on disk (living-docs), critical rules are guarded by hooks (accident guards, not security boundaries), humans approve at defined gates, and session context is treated as a disposable cache.
 
 > [PLAYBOOK.md](PLAYBOOK.md) holds the full methodology and its design rationale; [CHANGELOG.md](CHANGELOG.md) tracks the versioned process changes. Everything — the playbook, both templates, and every doc generated inside projects — is **English only**: fewer tokens, stronger instruction-following, stable terminology across sessions (chat with the agents in any language you like).
 
 ## Install
 
 ```bash
-npx vibe-playbook init solo my-project                          # recommended starting profile
+npx vibe-playbook init solo my-project                          # recommended profile (no design surface)
 npx vibe-playbook init orchestrated my-project                  # multi-session profile
-npx vibe-playbook init solo my-project --design first           # pick a design mode: first | sync | none
+npx vibe-playbook init solo my-project --design sync            # opt into the design track (or: first | none)
 ```
 
-The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version+design-mode (`.claude/.vibe-playbook`) — it refuses to overlay a different profile or design mode onto an existing scaffold (that would leave stale files mixed in). No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
+The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version+design-mode (`.claude/.vibe-playbook`) — it refuses to overlay a different profile or design mode onto an existing scaffold (that would leave stale files mixed in) and refuses any symlink/hardlink on the write path. No dependencies; Node ≥ 18. If an init exits nonzero, delete the target before retrying (a failed run may leave a partial scaffold). Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
 
-Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.3.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
+Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.4.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
 
 ## Pick a profile
 
@@ -41,11 +41,11 @@ Both profiles share the same DNA: the living-docs system, the four human gates, 
 
 ### Three design modes (`--design first|sync|none`)
 
-Both profiles scaffold in one of three design modes (default: `sync`):
+Both profiles scaffold in one of three design modes (default: `none` — the design surface is **opt-in**):
 
-- **`sync`** *(default)* — the design track alongside development: brief → Claude Design prototype → handoff → implement (design tokens only) → design-guardian audit → merge, per screen/task. Ships a project-scope `.mcp.json` for the **claude-design** MCP.
+- **`none`** *(default)* — no design surface: no `docs/design/`, no `.mcp.json`, no design-guardian agent. For backend/server-only projects (e.g. an LLM gateway) — and the safe default, so a project only takes on the Claude Design MCP/trust surface when it explicitly asks for it. *(Two inert `mcp__claude-design__*` allow entries remain in settings.json so one settings file serves all modes.)*
+- **`sync`** — the design track alongside development: brief → Claude Design prototype → handoff → implement (design tokens only) → design-guardian audit → merge, per screen/task. Ships a project-scope `.mcp.json` for the **claude-design** MCP.
 - **`first`** — prototype-before-code: a design phase (D0 distilled brief → D1 design system → D2 screen packages, all in Claude Design) runs between Phase 0 and Phase 1 and ends at **🚦 GATE D** — every prototype human-approved and the flows/rules locked in the living docs; development then starts maximally equipped. Adds `docs/design/design-first.md`, prompt skeletons, and (orchestrated) the `/design-kickoff` command. Prototypes live in Claude Design **cloud projects**; the repo stays the control-plane until handoff.
-- **`none`** — backend/server-only projects (e.g. an LLM gateway): no `docs/design/`, no `.mcp.json`, no design-guardian agent. *(Two inert `mcp__claude-design__*` allow entries remain in settings.json so one settings file serves all modes.)*
 
 Modes differ by **whole files only**; the mode is stamped in `.claude/.vibe-playbook` and the CLI refuses to overlay a different one. Switching later is a manual, deliberate act (copy/remove the mode's file set from the template).
 

@@ -3,6 +3,7 @@
 # Usage: test-guard-env.sh <path-to-guard-env.sh>
 set -u
 HOOK="${1:?usage: test-guard-env.sh <hook-path>}"
+HOOK="$(cd "$(dirname "$HOOK")" && pwd)/$(basename "$HOOK")"  # absolutize: the symlink tests cd elsewhere
 PASS=0; FAIL=0
 
 check() { # check <expected-exit> <name> <json>
@@ -59,6 +60,11 @@ if [ "$got" -eq 2 ]; then PASS=$((PASS+1)); echo "  OK  Read via symlink to .env
 ( cd "$SYMDIR" && printf '{"tool_name":"Read","tool_input":{"file_path":"ok-link"}}' | bash "$HOOK" >/dev/null 2>&1 ); got=$?
 if [ "$got" -eq 0 ]; then PASS=$((PASS+1)); echo "  OK  Read via symlink to .env.example free"; else FAIL=$((FAIL+1)); echo "  XX  symlink to .env.example — expected 0, got $got"; fi
 rm -rf "$SYMDIR"
+
+# --- external-review v8.4 regressions (fail-closed on malformed input) ---
+check 2 "malformed JSON fails closed" '{bad'
+check 2 "non-dict tool_input fails closed" '{"tool_name":"Read","tool_input":"x"}'
+check 0 "empty stdin allowed (nothing to guard)" ''
 
 echo "RESULT: $PASS passed, $FAIL failed"
 exit $FAIL

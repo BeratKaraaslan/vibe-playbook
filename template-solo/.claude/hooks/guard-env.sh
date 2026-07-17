@@ -40,12 +40,21 @@ def is_secret_token(t):
         return True
     return False
 
-try:
-    d = json.load(sys.stdin)
-except Exception:
+data = sys.stdin.read()
+if not data.strip():
     sys.exit(0)
+try:
+    d = json.loads(data)
+    if not isinstance(d, dict):
+        raise ValueError
+except Exception:
+    sys.stderr.write("BLOCKED (guard-env): malformed hook input — if you upgraded Claude Code, update or remove the hooks.")
+    sys.exit(2)
 
-ti = d.get("tool_input", {}) or {}
+ti = d.get("tool_input", {})
+if not isinstance(ti, dict):
+    sys.stderr.write("BLOCKED (guard-env): malformed hook input (tool_input) — update or remove the hooks.")
+    sys.exit(2)
 bad = []
 
 for key in ("file_path", "path", "notebook_path"):

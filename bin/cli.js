@@ -7,8 +7,10 @@
  *   npx vibe-playbook init orchestrated [target-dir] [--design <first|sync|none>]
  *
  * Safety model: the CLI NEVER overwrites existing files (there is deliberately no --force —
- * living docs are the project's memory; destroying them is never a flag away). It also refuses
- * symlinked targets and cross-profile overlays. Re-scaffolding means deleting files yourself, knowingly.
+ * living docs are the project's memory; destroying them is never a flag away). It refuses
+ * cross-profile/mode overlays and any symlink/hardlink on the write path (target, target/.claude,
+ * nested destination dirs, and the stamp) so files cannot land outside the target. Ancestors ABOVE
+ * the target are resolved normally (standard realpath). Re-scaffolding means deleting files yourself.
  */
 "use strict";
 
@@ -53,10 +55,11 @@ Profiles:
 
 Options:
   target-dir    Where to scaffold (default: current directory). Created if missing.
-  --design      Design mode (default: sync):
+  --design      Design mode (default: none):
+                  none   no design surface (default; backend/server-only, e.g. an LLM gateway)
                   sync   design track alongside development (Claude Design MCP loop)
                   first  prototype-before-code — design phases (D0→D2) + GATE D before Phase 1
-                  none   no design surface (backend/server-only projects, e.g. an LLM gateway)
+  --            End of options (a target-dir that begins with '-' may follow).
 
 The CLI never overwrites existing files and never overlays a different profile or
 design mode — re-scaffolding or switching is a manual, deliberate act (see README).
@@ -90,29 +93,33 @@ function refuseSymlink(p, what) {
 function main() {
   const argv = process.argv.slice(2);
 
-  // --design <mode> | --design=<mode> — the only real option (default: sync).
-  // Parsed out first so the unknown-option guard below keeps rejecting everything else.
-  let mode = "sync";
-  const rest = [];
+  // Options: --design <mode> | --design=<mode> (default: none) · -h/--help · -- (end of options).
+  // Everything else starting with "-" is rejected (there is deliberately no --force).
+  let mode = "none";
+  const args = [];
+  const unknownOpts = [];
+  let wantHelp = false;
+  let endOpts = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--design") mode = argv[++i];
-    else if (a.startsWith("--design=")) mode = a.slice("--design=".length);
-    else rest.push(a);
+    if (endOpts) { args.push(a); continue; }
+    if (a === "--") { endOpts = true; continue; }
+    if (a === "-h" || a === "--help") { wantHelp = true; continue; }
+    if (a === "--design") { mode = argv[++i]; continue; }
+    if (a.startsWith("--design=")) { mode = a.slice("--design=".length); continue; }
+    if (a.startsWith("-")) { unknownOpts.push(a); continue; }
+    args.push(a);
   }
   if (!DESIGN_MODES.includes(mode ?? "")) {
     console.error(`Invalid --design value: '${mode ?? "(missing)"}' (pick: first | sync | none)\n`);
     usage(1);
   }
-
-  const unknownOpts = rest.filter((a) => a.startsWith("-") && !["-h", "--help"].includes(a));
   if (unknownOpts.length > 0) {
     console.error(`Unknown option(s): ${unknownOpts.join(" ")} (there is no --force by design)\n`);
     usage(1);
   }
-  const args = rest.filter((a) => !a.startsWith("-"));
 
-  if (rest.length === 0 || ["-h", "--help"].includes(rest[0]) || args[0] === "help") usage(0);
+  if (argv.length === 0 || wantHelp || args[0] === "help") usage(0);
   if (args[0] !== "init") {
     console.error(`Unknown command: ${args[0]}\n`);
     usage(1);
@@ -143,9 +150,22 @@ function main() {
   refuseSymlink(target, "Target directory");
   refuseSymlink(path.join(target, ".claude"), "target/.claude");
 
+  // Stamp containment: the stamp is written unconditionally, so a symlinked/hardlinked
+  // .vibe-playbook would let the write escape the target. Refuse both before we read OR write it.
+  const stampPath = path.join(target, ".claude", ".vibe-playbook");
+  refuseSymlink(stampPath, "target/.claude/.vibe-playbook");
+  try {
+    const st = fs.lstatSync(stampPath);
+    if (st.nlink > 1) {
+      console.error(`target/.claude/.vibe-playbook is a hardlink (nlink=${st.nlink}) — refusing (the stamp write would modify a linked file).`);
+      process.exit(1);
+    }
+  } catch {
+    /* does not exist — fine */
+  }
+
   // Profile/mode-mix guard: overlaying a different profile or design mode leaves stale files behind.
   // Switching is a manual swap by design (see README).
-  const stampPath = path.join(target, ".claude", ".vibe-playbook");
   if (fs.existsSync(stampPath)) {
     const toks = fs.readFileSync(stampPath, "utf8").trim().split(/\s+/);
     const prev = toks[0];
@@ -184,6 +204,19 @@ function main() {
         `\nThere is deliberately no --force. If you really mean to re-scaffold, delete those files yourself first.`
     );
     process.exit(1);
+  }
+
+  // Nested-symlink containment: a pre-existing symlinked directory INSIDE the target would let
+  // cpSync write through it to an external location. Check every destination dir at/below target.
+  // (Ancestors ABOVE target are intentionally not checked — resolving them is normal realpath,
+  // e.g. /tmp -> /private/tmp.)
+  const destDirs = new Set();
+  for (const rel of files) {
+    const parts = rel.split(path.sep);
+    for (let k = 1; k < parts.length; k++) destDirs.add(parts.slice(0, k).join(path.sep));
+  }
+  for (const d of destDirs) {
+    refuseSymlink(path.join(target, d), `target/${d.split(path.sep).join("/")}`);
   }
 
   fs.mkdirSync(target, { recursive: true });

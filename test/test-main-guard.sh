@@ -100,6 +100,26 @@ check 2 "git -C checks the target repo (protected sub, unprotected cwd)" "$(j2 '
 git switch -q main
 rm -rf sub
 
+# --- external-review v8.4 regressions ---
+# F-03: the marker must match the actual merge OPERAND, not any token in the command
+echo "wip/P-1" > .claude/.gate4-ok
+check 2 "merge P-10 with approved name smuggled into -m message blocked" "$(j2 'git merge wip/P-10 -m wip/P-1')"
+check 2 "merge P-10 with approved name in --strategy-option blocked" "$(j2 'git merge wip/P-10 --strategy-option wip/P-1')"
+check 0 "merge P-1 with -m note (real operand approved) free" "$(j2 'git merge wip/P-1 -m note')"
+rm .claude/.gate4-ok
+# F-04: absolute-path git is still a git invocation
+echo z3 >> app.js; git add app.js
+check 2 "absolute-path /usr/bin/git commit blocked" "$(j2 '/usr/bin/git commit -m code')"
+git restore --staged app.js; git checkout -q -- app.js
+# F-04: a shell operator INSIDE a quoted commit message is not a compound command (no false block)
+echo d1 >> docs/n.md; git add -A
+check 0 "docs commit with quoted ; in message allowed (no false positive)" "$(j2 'git commit -m "docs: a; b"')"
+git commit -qm docs
+# F-17: fail-closed on malformed / unexpected hook input
+check 2 "malformed hook input fails closed" '{bad'
+check 2 "non-dict tool_input fails closed" '{"tool_name":"Bash","tool_input":"x"}'
+check 0 "empty stdin allowed (nothing to guard)" ''
+
 cd /; rm -rf "$REPO"
 echo "RESULT: $PASS passed, $FAIL failed"
 exit $FAIL

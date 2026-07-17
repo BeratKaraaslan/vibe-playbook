@@ -14,7 +14,7 @@
 | ④ Design | UI code | per-task (G-numbered) | docs/design/* |
 
 > For design (G) work the **decision-maker is Claude Design** (connected via MCP). The connection requires Claude Code **in the terminal (CLI)** — mandatory. Track mechanics (loop · report format · known constraints) → `docs/design/README.md`.
-> Design modes (stamped at scaffold): **sync** = the loop alongside development (README.md) · **first** = prototype-before-code, D0→D2 → 🚦 GATE D before Phase 1 (`docs/design/design-first.md`) · **none** = no design surface.
+> Design modes (stamped at scaffold): **none** = no design surface (default) · **sync** = the loop alongside development (README.md) · **first** = prototype-before-code, D0→D2 → 🚦 GATE D before Phase 1 (`docs/design/design-first.md`).
 
 ## Part cycle
 

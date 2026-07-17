@@ -273,10 +273,10 @@ brief (docs/design/<task>/brief.md) → Claude Design prototype (READ-ONLY on th
 - **Known constraint:** Claude Design **cannot read `.claude/agents/`** — Design-side conformance comes from the published Design System (+ `design-system-notes.md`); the guardian gates only the Code side.
 - **Two field lessons:** keep a `DESIGN-CONTEXT.md` **inside the web-app directory** (Design's read-only access can SEE it — the as-built truth both sides share) · **front-load hybrid**: global shell screens up-front, module screens JIT after their spec locks (designing before the spec locks = rework).
 
-**Design modes (v8.3)** — chosen at scaffold time (`npx vibe-playbook init <profile> --design <mode>`, stamped in `.claude/.vibe-playbook`; modes differ by whole files only):
-- **`sync`** (default) = the loop above, alongside development. The scaffold ships a project-scope `.mcp.json` for the canonical `claude-design` MCP (first use = one interactive per-user approval; writes = `/design-login` + per-session `/design-consent`).
+**Design modes (v8.3; default flipped to `none` in v8.4)** — chosen at scaffold time (`npx vibe-playbook init <profile> --design <mode>`, stamped in `.claude/.vibe-playbook`; modes differ by whole files only):
+- **`none`** (default) = no design surface (backend/server-only): the scaffold omits `docs/design/`, `.mcp.json`, and the design-guardian agent. Default so the design MCP/trust surface is opt-in, not automatic.
+- **`sync`** = the loop above, alongside development. The scaffold ships a project-scope `.mcp.json` for the canonical `claude-design` MCP (first use = one interactive per-user approval; writes = `/design-login` + per-session `/design-consent`).
 - **`first`** = prototype-before-code (field-distilled): **D0** ~15-line distilled brief per app (never the full strategy doc — context waste + strategy leakage) → **D1** design system (2 art directions → LOCK → publish; the published DS is READ-ONLY canon) → **D2** screen packages (conversion-critical first; ONE consolidated revise per package, PART A–D, ≤2 big turns) → optional adversarial review → **H** export → **🚦 GATE D** (§3). **Birth is manual, life is MCP takeover:** the human pastes the opening prompt and drops the `<app>-mcp.text` pointer; only then does the session do MCP surgery. Prototypes stay cloud-only until H. Multi-app concurrency: ownership partition (`docs/design/<app>/**`) + shared canon through the Manager + design sessions never run git. Normative detail: the scaffold's `docs/design/design-first.md`.
-- **`none`** = no design surface (backend/server-only): the scaffold omits `docs/design/`, `.mcp.json`, and the design-guardian agent.
 
 ---
 

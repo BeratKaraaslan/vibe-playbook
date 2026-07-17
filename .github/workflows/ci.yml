@@ -29,45 +29,67 @@ jobs:
           if node bin/cli.js init orchestrated /tmp/smoke; then echo "mix guard FAILED"; exit 1; else echo "mix guard OK"; fi
           if node bin/cli.js init solo /tmp/smoke; then echo "collision guard FAILED"; exit 1; else echo "collision guard OK"; fi
           if node bin/cli.js init solo /tmp/smoke2 --force; then echo "unknown-option guard FAILED"; exit 1; else echo "no-force OK"; fi
-      - name: CLI design modes (default sync · none excludes · first overlays · stamp + guards)
+      - name: CLI design modes (default none · sync/first opt-in · stamp + guards)
         run: |
-          # default = sync: design track + .mcp.json + guardian present; overlay machinery absent
-          test -f /tmp/smoke/docs/design/README.md
-          test -f /tmp/smoke/.mcp.json
-          test -f /tmp/smoke/.claude/agents/design-guardian.md
+          # bare init = NONE (default): design surface absent, everything else intact
+          test ! -e /tmp/smoke/docs/design
+          test ! -f /tmp/smoke/.mcp.json
+          test ! -f /tmp/smoke/.claude/agents/design-guardian.md
+          test -f /tmp/smoke/.claude/agents/verifier.md
+          test -f /tmp/smoke/docs/ops/_TEMPLATE-runbook.md
           test ! -e /tmp/smoke/_overlays
-          test ! -f /tmp/smoke/docs/design/design-first.md
-          grep -q "^solo v.* sync$" /tmp/smoke/.claude/.vibe-playbook
-          # none: design surface fully absent, everything else intact
-          node bin/cli.js init solo /tmp/smoke-none --design none
-          test ! -e /tmp/smoke-none/docs/design
-          test ! -f /tmp/smoke-none/.mcp.json
-          test ! -f /tmp/smoke-none/.claude/agents/design-guardian.md
-          test -f /tmp/smoke-none/.claude/agents/verifier.md
-          test -f /tmp/smoke-none/docs/ops/_TEMPLATE-runbook.md
-          grep -q "^solo v.* none$" /tmp/smoke-none/.claude/.vibe-playbook
+          grep -q "^solo v.* none$" /tmp/smoke/.claude/.vibe-playbook
+          # sync (opt-in): design track + .mcp.json + guardian present; overlay machinery absent
+          node bin/cli.js init solo /tmp/smoke-sync --design sync
+          test -f /tmp/smoke-sync/docs/design/README.md
+          test -f /tmp/smoke-sync/.mcp.json
+          test -f /tmp/smoke-sync/.claude/agents/design-guardian.md
+          test ! -e /tmp/smoke-sync/_overlays
+          test ! -f /tmp/smoke-sync/docs/design/design-first.md
+          grep -q "^solo v.* sync$" /tmp/smoke-sync/.claude/.vibe-playbook
           # first (both flag syntaxes): overlay lands; design-kickoff is orchestrated-only
           node bin/cli.js init orchestrated /tmp/smoke-first --design=first
           test -f /tmp/smoke-first/docs/design/design-first.md
           test -f /tmp/smoke-first/docs/design/prompts/_TEMPLATE-birth-prompt.md
-          test -f /tmp/smoke-first/docs/design/prompts/_TEMPLATE-revise-prompt.md
           test -f /tmp/smoke-first/.claude/commands/design-kickoff.md
           test -f /tmp/smoke-first/.mcp.json
-          test -f /tmp/smoke-first/docs/design/README.md
           test ! -e /tmp/smoke-first/_overlays
           grep -q "^orchestrated v.* first$" /tmp/smoke-first/.claude/.vibe-playbook
           node bin/cli.js init solo /tmp/smoke-first-solo --design first
           test -f /tmp/smoke-first-solo/docs/design/design-first.md
           test ! -f /tmp/smoke-first-solo/.claude/commands/design-kickoff.md
-          # mode-mix guard (the refusal message names the design mode)
-          if node bin/cli.js init solo /tmp/smoke-none --design first 2>/tmp/err.txt; then echo "mode guard FAILED"; exit 1; fi
+          # mode-mix guard: /tmp/smoke is none; overlaying first must refuse naming the mode
+          if node bin/cli.js init solo /tmp/smoke --design first 2>/tmp/err.txt; then echo "mode guard FAILED"; exit 1; fi
           grep -qi "design mode" /tmp/err.txt || { echo "mode guard wrong message"; exit 1; }
           echo "mode guard OK"
           # invalid / valueless --design rejected with NO side effects
           if node bin/cli.js init solo /tmp/smoke-bad --design banana; then echo "invalid mode FAILED"; exit 1; else echo "invalid mode OK"; fi
           if node bin/cli.js init solo /tmp/smoke-bad --design; then echo "valueless mode FAILED"; exit 1; else echo "valueless mode OK"; fi
           test ! -e /tmp/smoke-bad
-      - name: tarball sanity
+      - name: CLI symlink/hardlink containment (F-01/F-02/F-16)
         run: |
-          npm pack --dry-run
+          # stamp symlink -> external nonexistent: refuse, do NOT create outside
+          mkdir -p /tmp/c1/.claude; ln -s /tmp/outside1.txt /tmp/c1/.claude/.vibe-playbook
+          if node bin/cli.js init solo /tmp/c1; then echo "stamp-symlink FAILED"; exit 1; fi
+          test ! -e /tmp/outside1.txt && echo "stamp-symlink OK"
+          # stamp hardlink -> external empty file: refuse, do NOT overwrite
+          mkdir -p /tmp/c2/.claude; : > /tmp/outside2.txt; ln /tmp/outside2.txt /tmp/c2/.claude/.vibe-playbook
+          if node bin/cli.js init solo /tmp/c2; then echo "stamp-hardlink FAILED"; exit 1; fi
+          test ! -s /tmp/outside2.txt && echo "stamp-hardlink OK"
+          # nested dir symlink: .claude/hooks -> external dir must refuse, nothing lands outside
+          mkdir -p /tmp/c3/.claude /tmp/c3-out; ln -s /tmp/c3-out /tmp/c3/.claude/hooks
+          if node bin/cli.js init solo /tmp/c3; then echo "nested-symlink FAILED"; exit 1; fi
+          test -z "$(ls -A /tmp/c3-out)" && echo "nested-symlink OK"
+          # -- option terminator is accepted (was rejected as an unknown option pre-8.4)
+          node bin/cli.js init solo -- /tmp/smoke-dash
+          test -f /tmp/smoke-dash/.claude/.vibe-playbook && echo "-- terminator OK"
+      - name: real tarball — pack, extract, run tests on the packed artifact
+        run: |
           npm pack --dry-run 2>&1 | grep -q "template/.mcp.json"
+          npm pack --ignore-scripts
+          TGZ=$(ls vibe-playbook-*.tgz)
+          mkdir -p /tmp/tb && tar -xzf "$TGZ" -C /tmp/tb
+          ( cd /tmp/tb/package && npm test )
+          node /tmp/tb/package/bin/cli.js init solo /tmp/tb-scaffold
+          test -f /tmp/tb-scaffold/.gitignore
+          grep -q "^solo v.* none$" /tmp/tb-scaffold/.claude/.vibe-playbook
