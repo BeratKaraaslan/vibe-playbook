@@ -28,7 +28,7 @@ Development flows as **vibe coding** (the AI advances in small steps, the human 
 | **① Manager** | Code ❌ / Docs ✅ | Phase/project-long (handed over) | Process owner: splits the phase into parts · refines kickoffs · audits gates · pins decisions | progress.md · issues.md · open-questions.md |
 | **② Development** | Code ✅ | Per-part (fresh) | Codes one part (P-numbered) end to end: spec→plan→impl→test→review→merge | module-specs/`<part>`.md |
 | **③ Ops / DevOps** | Config/scripts ✅, product code ❌ | **PERSISTENT** (cache — ↓) | Manual & infra: server · panel (Dokploy etc.) · domain/DNS · environments · CI/CD infra · secret placement · backup/monitoring | **infra-state.md** · docs/ops/`<runbook>`.md |
-| **④ Design** | UI code ✅ | Per-task (G-numbered) | Visual/UI parts; design-system-guardian guardrail; design track | docs/design/STATUS.md · `<G-task>`/brief.md |
+| **④ Design** | UI code ✅ | Per-task (G-numbered) | Visual/UI parts; design-guardian guardrail; design track | docs/design/STATUS.md · `<G-task>`/brief.md |
 
 > **The Manager "writes no code" ≠ sits idle.** The Manager owns the docs and the process: updates living-docs, produces kickoffs, pins decisions, audits gates.
 
@@ -75,7 +75,8 @@ MERGE + docs          → the ONLY way into main (enforced by the main-guard hoo
 
 ## 3. Phase & part structure
 
-- **Phase 0 = PLANNING (no code):** the Manager produces all docs → 🚦 the biggest gate (decisions lock here). Output: the living-docs set + `phase-kickoffs.md` (draft commands for later phases). Phase 0 ends by deriving the **project-specific `.claude/` configuration** via **`/adapt`** — domain-expert agents · verifier invariants (the placeholder must not survive Phase 0 empty) · the stack's real allow-list · optional doc classes (spine/prompts/design/go-live). The proposal rides the Phase 0 gate; the §12 minimal-set rule applies (every agent is carried maintenance — items are approved one by one). Re-run `/adapt` when a new domain surface appears mid-project.
+- **Phase 0 = PLANNING (no code):** the Manager produces all docs → 🚦 the biggest gate (decisions lock here). Output: the living-docs set + `phase-kickoffs.md` (draft commands for later phases). Phase 0 ends by deriving the **project-specific `.claude/` configuration** via **`/adapt`** — domain-expert agents · verifier invariants (the placeholder must not survive Phase 0 empty) · the stack's real allow-list · optional doc classes (spine/prompts/design/go-live). The proposal rides the Phase 0 gate; the §12 minimal-set rule applies (every agent is carried maintenance — items are approved one by one; when the human arrives with a **complete analysis**, `/adapt`'s **one-shot path** takes a single bulk approval instead — the session starts in plan mode, which already provides the review). Re-run `/adapt` when a new domain surface appears mid-project.
+- **Design-first mode** (`--design first`, §13): between Phase 0 and Phase 1 a design phase runs — D0 distilled brief → D1 design system LOCK → D2 screen packages → handoff — ending at **🚦 GATE D**: every prototype human-approved + flows/rules locked in the living docs; then Phase 1 proceeds with the normal per-part gates (mechanics: the scaffold's `docs/design/design-first.md`).
 - **Phase N:** split into parts — code parts `P1, P2…` · design `G1, G2…` · ops work in its own flow. **Partitioning rule:** parts that will run in parallel must have **disjoint file scopes** (client/backend etc.); parts touching the same files run sequentially, not in parallel — the conflict/code-loss risk is cut at partitioning time.
 - Every part starts in a **fresh session** (clean context). The Manager refines the part's kickoff.
 
@@ -243,12 +244,14 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 │  │                   #   · exact-branch marker · git -C targets the RIGHT repo · docs-only commits free
 │  │                   #   (.claude/ is control-plane, NOT docs) · accident guard — PR merges need branch protection
 │  └─ pre-compact.sh   # (OPTIONAL — by choice at project start) PreCompact: ground snapshot + notification (§10)
-├─ agents/             # verifier (GATE 4, §4.3) — the MINIMAL set; spec-writer/test-writer/design-guardian
+├─ agents/             # verifier (GATE 4, §4.3) + design-guardian (design-system conformance, advisory;
+│                      #   mode-managed — absent in --design none) — the MINIMAL set; spec-writer/test-writer
 │                      #   are added only once proven load-bearing (every agent is carried maintenance).
 │                      #   verifier: pin a strong model + grow a project-specific checklist in it (Phase 0)
 └─ commands/           # /gate1 (spec) · /gate2 (plan) · /gate3 (mechanical proof) · /gate4 (review) ·
                        #   /wip (checkpoint commit) · /new-part · /adapt (Phase 0: derive the project-specific
-                       #   configuration) — names deliberately avoid Claude Code built-ins
+                       #   configuration; one-shot path when a full analysis is supplied) · /design-kickoff
+                       #   (--design first only) — names deliberately avoid Claude Code built-ins
 ```
 
 ---
@@ -265,10 +268,15 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 ```
 brief (docs/design/<task>/brief.md) → Claude Design prototype (READ-ONLY on the repo; no commits)
 → Export / Handoff bundle → Code implements (design tokens only — no hardcoded values)
-→ design-system-guardian gate (CODE SIDE ONLY) → PR → fixed-format report to the Manager → STATUS ledger
+→ design-guardian agent gate (CODE SIDE ONLY) → PR → fixed-format report to the Manager → STATUS ledger
 ```
 - **Known constraint:** Claude Design **cannot read `.claude/agents/`** — Design-side conformance comes from the published Design System (+ `design-system-notes.md`); the guardian gates only the Code side.
 - **Two field lessons:** keep a `DESIGN-CONTEXT.md` **inside the web-app directory** (Design's read-only access can SEE it — the as-built truth both sides share) · **front-load hybrid**: global shell screens up-front, module screens JIT after their spec locks (designing before the spec locks = rework).
+
+**Design modes (v8.3)** — chosen at scaffold time (`npx vibe-playbook init <profile> --design <mode>`, stamped in `.claude/.vibe-playbook`; modes differ by whole files only):
+- **`sync`** (default) = the loop above, alongside development. The scaffold ships a project-scope `.mcp.json` for the canonical `claude-design` MCP (first use = one interactive per-user approval; writes = `/design-login` + per-session `/design-consent`).
+- **`first`** = prototype-before-code (field-distilled): **D0** ~15-line distilled brief per app (never the full strategy doc — context waste + strategy leakage) → **D1** design system (2 art directions → LOCK → publish; the published DS is READ-ONLY canon) → **D2** screen packages (conversion-critical first; ONE consolidated revise per package, PART A–D, ≤2 big turns) → optional adversarial review → **H** export → **🚦 GATE D** (§3). **Birth is manual, life is MCP takeover:** the human pastes the opening prompt and drops the `<app>-mcp.text` pointer; only then does the session do MCP surgery. Prototypes stay cloud-only until H. Multi-app concurrency: ownership partition (`docs/design/<app>/**`) + shared canon through the Manager + design sessions never run git. Normative detail: the scaffold's `docs/design/design-first.md`.
+- **`none`** = no design surface (backend/server-only): the scaffold omits `docs/design/`, `.mcp.json`, and the design-guardian agent.
 
 ---
 
@@ -285,6 +293,7 @@ template/  →  <new-repo>/
 ├─ CLAUDE.md              # LEAN: doc map + 11 critical rules (auto-loaded)
 ├─ progress.md · issues.md            # state boards (start empty; loaded at session start)
 ├─ open-questions.md · NEEDS-FROM-USER.md · .env.example · gitignore (→ .gitignore at init)
+├─ .mcp.json              # claude-design MCP, project scope (omitted by --design none)
 ├─ PRD.md · architecture.md · data-model.md      # the plan track (filled during Phase 0)
 ├─ infra-state.md         # the Ops session board (infra truth)
 ├─ module-specs/_TEMPLATE.md          # the spec template (incl. the gate-profile field — §2)
@@ -292,8 +301,10 @@ template/  →  <new-repo>/
 ├─ docs/
 │  ├─ archive/changelog.md            # + phase-N-summary.md at phase ends
 │  ├─ ops/_TEMPLATE-runbook.md        # steps + a why-decisions section (the anti-confabulation source)
-│  └─ design/{STATUS.md, design-system-notes.md}   # optional (delete if unused)
+│  └─ design/{README, STATUS, _TEMPLATE-brief, design-system-notes}  # mode-managed: --design none
+│                                          #   omits; --design first adds design-first.md + prompts/
 ├─ .claude/               # the §12 structure — hooks are tested, working files
+├─ _overlays/design-first/  # the --design first file set (the CLI copies it in; never part of a base scaffold)
 └─ memory-seed/manager-session-pattern.md   # the first Manager session saves it to memory (STARTGUIDE §3)
 ```
 
@@ -365,5 +376,7 @@ The same methodology has two profiles; **the DNA is shared** (the living-docs sy
 3. **The safety net (PreCompact default-ON):** a solo session lives long; compaction WILL come — the hook that is optional in orchestrated is the default in solo.
 
 **The audience line, honestly drawn:** solo removes the *mechanical* developer dependencies (branches, commits, merges, worktrees — the agent runs them; GATE 4 is presented plain-language-first with a technical appendix). It does NOT remove the *judgment* dependency: the gates still ask a human "is this what I wanted? does it work when I try it?" — that judgment is the safety backbone, and on money/auth surfaces it matters most. A vibe coder supplies judgment; a developer can additionally read the appendix.
+
+**Design-first in solo (`--design first`):** the one session drives D0→D1→D2 **serially** before Phase 1 (usually one app surface) — same birth-manual/life-MCP rules, prompt skeletons, and STATUS ledger as §13; no sessions protocol and no dedicated command (the STARTGUIDE §3b block + conversation drive it). 🚦 GATE D applies unchanged.
 
 **Profile switching:** the living-docs layer is identical in both profiles (same file names, same spec template) → switching mid-project is possible: `.claude/` + `workflow.md` + `CLAUDE.md` change, the docs stay as they are. **Start solo, switch to orchestrated when parallelism appears** — that is the supported path.

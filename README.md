@@ -11,13 +11,14 @@ The core problem this solves: LLM sessions lose context, drift, and confabulate.
 ## Install
 
 ```bash
-npx vibe-playbook init solo my-project          # recommended starting profile
-npx vibe-playbook init orchestrated my-project  # multi-session profile
+npx vibe-playbook init solo my-project                          # recommended starting profile
+npx vibe-playbook init orchestrated my-project                  # multi-session profile
+npx vibe-playbook init solo my-project --design first           # pick a design mode: first | sync | none
 ```
 
-The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version (`.claude/.vibe-playbook`) — it refuses to overlay a different profile onto an existing scaffold (that would leave stale files mixed in). No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
+The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version+design-mode (`.claude/.vibe-playbook`) — it refuses to overlay a different profile or design mode onto an existing scaffold (that would leave stale files mixed in). No dependencies; Node ≥ 18. Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
 
-Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.2.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
+Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.3.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
 
 ## Pick a profile
 
@@ -38,9 +39,19 @@ The split is by **audience** as much as by project shape:
 
 Both profiles share the same DNA: the living-docs system, the four human gates, the enforcement hooks, English-only docs, and anti-confabulation ("if it's not in the docs, it's not known"). Because the living-docs layer is **identical** in both, a project can switch profiles mid-flight: swap `.claude/` + `workflow.md` + `CLAUDE.md`, keep all the docs. Recommended path: **start solo, move to orchestrated when you need parallel tracks.**
 
+### Three design modes (`--design first|sync|none`)
+
+Both profiles scaffold in one of three design modes (default: `sync`):
+
+- **`sync`** *(default)* — the design track alongside development: brief → Claude Design prototype → handoff → implement (design tokens only) → design-guardian audit → merge, per screen/task. Ships a project-scope `.mcp.json` for the **claude-design** MCP.
+- **`first`** — prototype-before-code: a design phase (D0 distilled brief → D1 design system → D2 screen packages, all in Claude Design) runs between Phase 0 and Phase 1 and ends at **🚦 GATE D** — every prototype human-approved and the flows/rules locked in the living docs; development then starts maximally equipped. Adds `docs/design/design-first.md`, prompt skeletons, and (orchestrated) the `/design-kickoff` command. Prototypes live in Claude Design **cloud projects**; the repo stays the control-plane until handoff.
+- **`none`** — backend/server-only projects (e.g. an LLM gateway): no `docs/design/`, no `.mcp.json`, no design-guardian agent. *(Two inert `mcp__claude-design__*` allow entries remain in settings.json so one settings file serves all modes.)*
+
+Modes differ by **whole files only**; the mode is stamped in `.claude/.vibe-playbook` and the CLI refuses to overlay a different one. Switching later is a manual, deliberate act (copy/remove the mode's file set from the template).
+
 ## Requirements
 
-- **Claude Code** (CLI). The design track additionally uses the **Claude Design MCP** as design decision-maker — that connection requires Claude Code run **from the terminal**.
+- **Claude Code** (CLI). The design track (modes `sync`/`first`) uses the **Claude Design MCP** as design decision-maker — the scaffold ships it project-scope in `.mcp.json` (canonical server name `claude-design`); first use asks each user for ONE interactive approval (a checked-in settings.json cannot pre-approve it), auth = `/design-login`, writes = per-session `/design-consent`. The connection requires Claude Code run **from the terminal**. *(User-scope alternative: `claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp`.)*
 - `git`, `bash`, `python3` (used by the hooks). macOS/Linux (on Windows, use WSL).
 - Node ≥ 18 only if you scaffold via `npx` (the templates themselves need no Node).
 - First run must be **interactive**: Claude Code applies a project's `settings.json` permissions only after you accept the workspace-trust prompt.
@@ -65,7 +76,7 @@ IMPL    →            checkpoint commits on a wip/ branch
 npx vibe-playbook init orchestrated my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template/. my-project/ && cd my-project
-#   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
+#   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh && rm -rf _overlays
 git init && git add -A && git commit -m "scaffold: playbook v8 template"
 ```
 
@@ -85,7 +96,7 @@ Full guide: [`template/STARTGUIDE.md`](template/STARTGUIDE.md)
 npx vibe-playbook init solo my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template-solo/. my-project/ && cd my-project
-#   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh
+#   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh && rm -rf _overlays
 git init && git add -A && git commit -m "scaffold: playbook v8 solo template"
 ```
 
@@ -123,6 +134,7 @@ Hooks apply to subagent tool calls too, and fail closed if python3 is missing. T
 | `/new-part` | ✅ | — | (Manager) produce a fresh-session kickoff from the living-docs |
 | `/part` | — | ✅ | Drive a part end to end, stopping at every gate |
 | `/tidy` | — | ✅ | Sync docs to ground truth → declare "safe to compact" |
+| `/design-kickoff` | ✅ (`--design first`) | — | (Manager) per-app design-session kickoff for the design phase (D0→D2) |
 
 ## Repo layout
 
@@ -134,6 +146,8 @@ package.json       # npm package (major version = playbook version)
 bin/cli.js         # zero-dependency scaffolder (npx vibe-playbook init …)
 template/          # orchestrated profile — multi-session
 template-solo/     # solo profile — one session + subagents
+                   #   (each ships _overlays/design-first/ — the --design first file set; CLI machinery,
+                   #    never part of a base scaffold — remove it on manual copies)
 test/              # hook test suites (npm test — runs against both templates)
 ```
 

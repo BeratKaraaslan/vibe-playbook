@@ -23,6 +23,7 @@ cp -R <vibe-playbook>/template/. <new-project>/
 cd <new-project>
 mv gitignore .gitignore        # shipped without the dot (npm packaging constraint)
 chmod +x .claude/hooks/*.sh
+rm -rf _overlays               # design-mode machinery: manual copy = sync; for first/none see README "Three design modes"
 git init && git add -A && git commit -m "scaffold: playbook v8 template"
 ```
 
@@ -37,7 +38,7 @@ git init && git add -A && git commit -m "scaffold: playbook v8 template"
 - **Protected branches:** main-guard protects `main`/`master` by default; using `trunk`/`develop`? set `VIBE_PROTECTED_BRANCHES` or edit the line at the top of `.claude/hooks/main-guard.sh`.
 - **High-assurance work:** the hooks are accident guards, NOT security boundaries. For hard guarantees add GitHub/GitLab **branch protection**, run GATE 3 / verifier tests in a **clean CI runner** (a reviewed branch's test code is that branch's code), and consider **Claude Code sandboxing** for OS-level file/network limits.
 - **Optional:**
-  - Using the design track: **connect the Claude Design MCP** — the design decision-maker is Claude Design and the connection requires Claude Code **in the terminal (CLI)** (**mandatory**; run G work from the terminal, not desktop/IDE). Not using it: `docs/design/` can be deleted.
+  - Design track (modes `sync`/`first`): the scaffold ships a project-scope **`.mcp.json`** for the **claude-design** MCP — every session in this directory inherits it, but first use still asks EACH user for one interactive approval (a checked-in settings.json cannot pre-approve it); auth = `/design-login`, writes = per-session `/design-consent`. The design decision-maker is Claude Design; the connection requires Claude Code **in the terminal (CLI)** (**mandatory**; run G work from the terminal, not desktop/IDE). `--design none` scaffolds ship no design files — the mode is stamped in `.claude/.vibe-playbook`. *(User-scope alternative: `claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp`.)*
   - Want the **PreCompact safety net**: add to `settings.json` → `"hooks"`:
 
 ```json
@@ -71,6 +72,15 @@ All docs in English (CLAUDE.md rule 11); chat follows my language.
 EXIT 🚦 PHASE 0 GATE (the biggest one): present all docs for my approval; decisions lock here.
 FIRST STEP: extract the questions you will ask me about the PRD — before doing anything else.
 ```
+
+## 3b. Design-first start (only `--design first` scaffolds)
+
+After the Phase 0 gate, a design phase runs BEFORE Phase 1 (full mechanics: `docs/design/design-first.md`):
+
+1. **D0:** the Manager distills a ~15-line design brief per app (never the full strategy doc) and materializes `docs/design/<app>/`.
+2. **D1:** design-system project in Claude Design — 2 art directions → you pick → iterate → LOCK → publish (READ-ONLY canon afterwards).
+3. **D2:** `/design-kickoff <app>` in the manager session → paste into a fresh design session per app. **Birth is manual:** the session drafts the opening prompt, YOU paste it into a new Claude Design chat, review the first build in the UI, and drop `docs/design/<app>/<app>-mcp.text` (project URL). Only then does the session take over via MCP (`/design-consent` per session) — consolidated revises (PART A–D, ≤2 big turns per package). Your revisions route through the Manager.
+4. **EXIT 🚦 GATE D:** every prototype approved by you + flows/rules written into the living docs → Phase 1 (normal per-part gates).
 
 ## 4. Daily flow (summary)
 

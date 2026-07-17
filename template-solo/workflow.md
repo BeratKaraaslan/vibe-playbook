@@ -16,6 +16,7 @@
 
 > Hooks (main-guard, guard-env) apply to subagent tool calls too — the guards hold everywhere.
 > Design (G) work: the decision-maker is **Claude Design** (MCP; Claude Code **in the terminal** — mandatory). Implementation still goes through the implementer.
+> Design modes (stamped at scaffold): **sync** = the loop alongside development (docs/design/README.md) · **first** = prototype-before-code, D0→D2 → 🚦 GATE D before Phase 1 (`docs/design/design-first.md`) · **none** = no design surface.
 
 ## Part cycle
 

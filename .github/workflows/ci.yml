@@ -29,5 +29,45 @@ jobs:
           if node bin/cli.js init orchestrated /tmp/smoke; then echo "mix guard FAILED"; exit 1; else echo "mix guard OK"; fi
           if node bin/cli.js init solo /tmp/smoke; then echo "collision guard FAILED"; exit 1; else echo "collision guard OK"; fi
           if node bin/cli.js init solo /tmp/smoke2 --force; then echo "unknown-option guard FAILED"; exit 1; else echo "no-force OK"; fi
+      - name: CLI design modes (default sync · none excludes · first overlays · stamp + guards)
+        run: |
+          # default = sync: design track + .mcp.json + guardian present; overlay machinery absent
+          test -f /tmp/smoke/docs/design/README.md
+          test -f /tmp/smoke/.mcp.json
+          test -f /tmp/smoke/.claude/agents/design-guardian.md
+          test ! -e /tmp/smoke/_overlays
+          test ! -f /tmp/smoke/docs/design/design-first.md
+          grep -q "^solo v.* sync$" /tmp/smoke/.claude/.vibe-playbook
+          # none: design surface fully absent, everything else intact
+          node bin/cli.js init solo /tmp/smoke-none --design none
+          test ! -e /tmp/smoke-none/docs/design
+          test ! -f /tmp/smoke-none/.mcp.json
+          test ! -f /tmp/smoke-none/.claude/agents/design-guardian.md
+          test -f /tmp/smoke-none/.claude/agents/verifier.md
+          test -f /tmp/smoke-none/docs/ops/_TEMPLATE-runbook.md
+          grep -q "^solo v.* none$" /tmp/smoke-none/.claude/.vibe-playbook
+          # first (both flag syntaxes): overlay lands; design-kickoff is orchestrated-only
+          node bin/cli.js init orchestrated /tmp/smoke-first --design=first
+          test -f /tmp/smoke-first/docs/design/design-first.md
+          test -f /tmp/smoke-first/docs/design/prompts/_TEMPLATE-birth-prompt.md
+          test -f /tmp/smoke-first/docs/design/prompts/_TEMPLATE-revise-prompt.md
+          test -f /tmp/smoke-first/.claude/commands/design-kickoff.md
+          test -f /tmp/smoke-first/.mcp.json
+          test -f /tmp/smoke-first/docs/design/README.md
+          test ! -e /tmp/smoke-first/_overlays
+          grep -q "^orchestrated v.* first$" /tmp/smoke-first/.claude/.vibe-playbook
+          node bin/cli.js init solo /tmp/smoke-first-solo --design first
+          test -f /tmp/smoke-first-solo/docs/design/design-first.md
+          test ! -f /tmp/smoke-first-solo/.claude/commands/design-kickoff.md
+          # mode-mix guard (the refusal message names the design mode)
+          if node bin/cli.js init solo /tmp/smoke-none --design first 2>/tmp/err.txt; then echo "mode guard FAILED"; exit 1; fi
+          grep -qi "design mode" /tmp/err.txt || { echo "mode guard wrong message"; exit 1; }
+          echo "mode guard OK"
+          # invalid / valueless --design rejected with NO side effects
+          if node bin/cli.js init solo /tmp/smoke-bad --design banana; then echo "invalid mode FAILED"; exit 1; else echo "invalid mode OK"; fi
+          if node bin/cli.js init solo /tmp/smoke-bad --design; then echo "valueless mode FAILED"; exit 1; else echo "valueless mode OK"; fi
+          test ! -e /tmp/smoke-bad
       - name: tarball sanity
-        run: npm pack --dry-run
+        run: |
+          npm pack --dry-run
+          npm pack --dry-run 2>&1 | grep -q "template/.mcp.json"
