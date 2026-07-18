@@ -12,6 +12,7 @@
 #  - counts UNTRACKED files as code changes.
 #  - blocks `git cherry-pick` outright; `git merge` needs .claude/.gate4-ok with the EXACT branch
 #    as the actual merge OPERAND (a name smuggled into -m/--strategy-option no longer satisfies it).
+#    `git merge --abort/--continue/--quit` conclude an in-progress merge (no new branch) — allowed.
 #  - honors `git -C <path>` (checks the TARGET repo) and path/flag forms (`/usr/bin/git`, `git -c k=v`).
 # Command parsing is done ONCE in python (shlex) — proper quote/operator handling, not layered regex.
 # Fail-closed: python3 missing OR malformed hook input → block. Protected: VIBE_PROTECTED_BRANCHES.
@@ -27,6 +28,7 @@ PROTECTED_BRANCHES="${VIBE_PROTECTED_BRANCHES:-main master}"
 
 # One python pass: emits 7 lines — STATUS, GITC, COMMIT, COMPOUND, CHERRY, MERGE, OPERAND.
 # STATUS: empty|malformed|nogit|parsefail|ok. Only "ok" carries the remaining fields.
+# MERGE is set only for a branch-introducing merge; --abort/--continue/--quit are NOT governed.
 parsed=$(printf '%s' "$input" | python3 -c '
 import json, os, re, shlex, sys
 
@@ -56,6 +58,7 @@ except Exception:
 COMPOUND_OPS = {";", "&&", "||", "|"}
 GLOBAL_VALUE_OPTS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--exec-path"}
 MERGE_VALUE_OPTS = {"-m", "--message", "-F", "--file", "-s", "--strategy", "-X", "--strategy-option", "--into-name"}
+MERGE_CONTROL = {"--abort", "--continue", "--quit"}
 ENV_ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
 def is_op(t):
@@ -76,7 +79,7 @@ def parse_git(seg):
     while i < len(seg) and (seg[i] in ("command", "exec", "builtin", "time", "nice", "sudo") or ENV_ASSIGN.match(seg[i])):
         i += 1
     if i >= len(seg) or os.path.basename(seg[i]) != "git":
-        return (False, None, None, None)
+        return (False, None, None, None, False)
     i += 1
     gitc = None
     while i < len(seg):
@@ -89,24 +92,27 @@ def parse_git(seg):
             i += 1; continue
         break
     if i >= len(seg):
-        return (True, None, gitc, None)
+        return (True, None, gitc, None, False)
     sub = seg[i]; i += 1
     operand = None
+    control = False
     if sub == "merge":
         while i < len(seg):
             t = seg[i]
+            if t in MERGE_CONTROL:
+                control = True
             if t in MERGE_VALUE_OPTS and i + 1 < len(seg):
                 i += 2; continue
             if t.startswith("-"):
                 i += 1; continue
             operand = t; break
-    return (True, sub, gitc, operand)
+    return (True, sub, gitc, operand, control)
 
 commit = cherry = merge = 0
 operand = ""
 gitc = ""
 for seg in segments:
-    isg, sub, gc, op = parse_git(seg)
+    isg, sub, gc, op, ctl = parse_git(seg)
     if not isg:
         continue
     if gc and not gitc:
@@ -115,7 +121,8 @@ for seg in segments:
         commit = 1
     elif sub == "cherry-pick":
         cherry = 1
-    elif sub == "merge":
+    elif sub == "merge" and not ctl:
+        # --abort/--continue/--quit conclude an in-progress merge (no new branch) — not governed
         merge = 1
         if op is not None:
             operand = op
@@ -190,6 +197,8 @@ if [ "$CHERRY" = "1" ]; then
 fi
 
 # --- merge protection (GATE 4 marker required, EXACT branch as the merge OPERAND) ---
+# --abort/--continue/--quit never set MERGE (handled in the parse above); bare `git merge`
+# and operand merges stay governed even when chained after a control merge.
 if [ "$MERGE" = "1" ]; then
   flag=".claude/.gate4-ok"
   [ -f "$flag" ] || deny "GATE 4 approval is not marked. AFTER human approval run: echo <branch-name> > .claude/.gate4-ok"

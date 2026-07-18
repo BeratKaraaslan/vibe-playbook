@@ -115,6 +115,14 @@ git restore --staged app.js; git checkout -q -- app.js
 echo d1 >> docs/n.md; git add -A
 check 0 "docs commit with quoted ; in message allowed (no false positive)" "$(j2 'git commit -m "docs: a; b"')"
 git commit -qm docs
+# v8.4: git merge --abort/--continue/--quit conclude an in-progress merge (no new branch) — allowed
+check 0 "merge --abort on main allowed (concludes in-progress merge)" "$(j2 'git merge --abort')"
+check 0 "merge --continue on main allowed" "$(j2 'git merge --continue')"
+check 0 "merge --quit on main allowed" "$(j2 'git merge --quit')"
+# a control merge chained after a branch merge must NOT launder the governed operand merge
+echo "wip/P-1" > .claude/.gate4-ok
+check 2 "operand merge stays governed when chained before --continue" "$(j2 'git merge wip/P-10 && git merge --continue')"
+rm .claude/.gate4-ok
 # F-17: fail-closed on malformed / unexpected hook input
 check 2 "malformed hook input fails closed" '{bad'
 check 2 "non-dict tool_input fails closed" '{"tool_name":"Bash","tool_input":"x"}'
