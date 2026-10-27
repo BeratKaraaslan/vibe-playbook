@@ -5,17 +5,22 @@
 # Honest failure: if the snapshot cannot be written, exit 2 — under current Claude Code ONLY exit 2
 # blocks compaction, so blocking is the honest response (context is not lost silently; the human
 # fixes docs/archive perms or removes the hook). A snapshot path that resolves OUTSIDE the project
-# is refused rather than followed (containment).
+# is refused rather than followed (containment). Worktree-aware: rooted at the session's own tree.
 set -u
 input=$(cat 2>/dev/null || true)
-trigger=$(printf '%s' "$input" | python3 -c '
+parsed=$(printf '%s' "$input" | python3 -c '
 import json, sys
 try:
-    print(json.load(sys.stdin).get("trigger", "?"))
+    d = json.load(sys.stdin)
+    print(d.get("trigger", "?")); print(d.get("cwd", "") or "")
 except Exception:
-    print("?")' 2>/dev/null || echo "?")
+    print("?"); print("")' 2>/dev/null || printf '?\n\n')
+trigger=$(printf '%s\n' "$parsed" | sed -n 1p)
+cwd=$(printf '%s\n' "$parsed" | sed -n 2p)
 
-root="${CLAUDE_PROJECT_DIR:-$PWD}"
+# Root = the git toplevel of the session's CURRENT directory (input cwd) — in a worktree session
+# $CLAUDE_PROJECT_DIR stays at the main checkout, which would snapshot the wrong branch/tree.
+root=$(git -C "${cwd:-${CLAUDE_PROJECT_DIR:-$PWD}}" rev-parse --show-toplevel 2>/dev/null || echo "${CLAUDE_PROJECT_DIR:-$PWD}")
 snap="$root/docs/archive/compact-snapshots.md"
 
 if ! mkdir -p "$root/docs/archive" 2>/dev/null; then

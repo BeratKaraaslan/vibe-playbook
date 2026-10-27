@@ -3,7 +3,7 @@
 - **STATUS: DRAFT** *(lifecycle: DRAFT → APPROVED → APPLIED → SUPERSEDED — update this line; never delete the file)*
 - **App:** <name> · **Date:** <YYYY-MM-DD>
 
-> The HUMAN pastes everything below the line into a NEW Claude Design chat — sessions never create cloud projects. After reviewing the first build in the UI, the human drops the `<app>-mcp.text` pointer file (project URL + "auth via /design-login"); only then does MCP takeover begin.
+> The HUMAN starts the project with everything below the line — a NEW Claude Design chat, or `/design <brief>` from Claude Code where the Design template is enabled (preferred; the standalone site closes 2026-12-14) — sessions never create cloud projects on their own. After reviewing the first build in the UI, the human drops the `<app>-mcp.text` pointer file (project URL + "auth via /design-login"); only then does MCP takeover begin.
 
 --- PASTE BELOW THIS LINE ---
 

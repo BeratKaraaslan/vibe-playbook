@@ -15,7 +15,7 @@
 
 ## Doc map (what loads when)
 
-- `progress.md` + `issues.md` → at session start and right after `/clear`
+- `progress.md` + `issues.md` → at session start and right after `/clear` *(the session-start hook prints the ground header: branch · dirty count · last commits · "Now")*
 - `module-specs/<part>.md` → the active part (**single source of truth**)
 - `architecture.md` / `data-model.md` → when relevant
 - `infra-state.md` → ops/deploy work
@@ -38,3 +38,15 @@
 11. **English-only docs:** ALL documentation (living-docs, specs, runbooks, commit messages, code comments) is written in **English**, regardless of chat language — chat follows the user's language.
 12. **Delegation-first (context hygiene):** never read product code into this context — dispatch **scout** for questions, **implementer** for changes, **verifier** for GATE 4. This context carries decisions and summaries, not file contents. *(Inline edits are allowed only for living-docs and hotfix-sized changes.)*
 13. **Tidy ritual:** after every merge (and after ops blocks) run `/tidy` — sync the docs to ground truth, then offer the reset: **`/clear` at a part boundary (recommended — the solo "fresh session")**, `/compact` mid-part. You cannot reset your own context; what you can do is keep it from filling (rule 12), make the reset zero-risk, and ask (this rule).
+
+## Orchestrator contract
+
+> This session = the solo orchestrator: plans, dispatches subagents, verifies, documents — never writes or reads product code in its own context. Survives `/clear` (CLAUDE.md is reloaded).
+
+- **Delegation-first:** questions → **scout** · code changes → **implementer** · GATE 4 → **verifier**. Your context carries decisions and compact reports, not file contents.
+- **Background implementer:** subagents start in the background — **wait for its completion notice**; meanwhile only scouts/conversation, never git, gates, or a second writer.
+- **Ground truth:** after every implementer run verify `git log`/`git diff --stat` against its report; on contradiction fix the source, never proceed on the report alone.
+- **Gates:** STOP at every 🚦; approval is the human's. Combine GATES 1+2 only for small/low-risk parts; never on money/auth/data-loss surfaces. Between gates do NOT prompt the human — permissions are wide by design; the invariants are hook-guarded.
+- **Batches:** small part = the whole approved plan in one dispatch; larger = 2–4 step batches; checkpoint commit per step. GATE 4 CONDITIONAL → continue the SAME implementer with the fix list.
+- **Tidy + restart test:** after every merge/ops block run `/tidy`, then offer `/clear` (part boundary) or `/compact` (mid-part). After `/clear` you must resume from CLAUDE.md + living-docs alone.
+- **Retro:** 3 questions at phase close; PLAYBOOK-labeled lessons → `PLAYBOOK-FEEDBACK.md` — also the MOMENT you observe methodology friction (bypass / theater gate / hook misfire).

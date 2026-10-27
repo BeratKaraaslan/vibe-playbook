@@ -1,6 +1,7 @@
 # Design track — single source of truth (mode-managed: `--design none` scaffolds omit docs/design/)
 
-> Decision-maker: **Claude Design** (MCP — Claude Code **from the terminal**, mandatory).
+> Decision-maker: **Claude Design** (MCP — verify the connection with `/mcp`; the endpoint in `.mcp.json` is undocumented). Design-system access: `/design-login` · writes: `/design consent` (an ongoing grant; `/design revoke` withdraws it).
+> **Dated note (2026-10):** the standalone Claude Design site closes **2026-12-14** — new designs become claude.ai artifacts and standalone project links stop working. Where the Design template is enabled, `/design <brief>` from Claude Code creates one directly — the preferred birth path.
 > The orchestrator runs this track (writes briefs, keeps the ledger) — code lands via the **implementer** subagent.
 
 ## The loop (every screen/task — same skeleton)
@@ -8,7 +9,7 @@
 ```
 1) BRIEF      Orchestrator writes the brief → docs/design/<G-task>/brief.md (from _TEMPLATE-brief.md)
 2) PROTOTYPE  Drive the Claude Design canvas — iterate until the human approves
-3) HANDOFF    Design: Export → Handoff bundle → lands in the terminal session
+3) HANDOFF    Design: Export → Handoff bundle → lands in the Claude Code session
 4) IMPLEMENT  implementer subagent converts to real components — DESIGN TOKENS ONLY, no hardcoded colors/spacing
 5) GUARDIAN   design-guardian agent audit (.claude/agents/design-guardian.md — CODE SIDE ONLY) — no merge before it passes
 6) MERGE      GATE 3 (visual, human tries it) → the normal merge ritual

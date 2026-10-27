@@ -1,6 +1,6 @@
 # workflow.md — working rules (normative summary, SOLO mode)
 
-> **← playbook v8 (solo profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
+> **← playbook v9 (solo profile)** · canonical home: the vibe-playbook repo. RULES only here; rationale lives in the playbook.
 > Project-specific deviations go into "Project deviations" at the bottom — do not edit the body.
 > Abbreviation: GATE 1–4 = the human gates.
 
@@ -15,7 +15,7 @@
 | **verifier** | GATE 4 verification from code | VERDICT / EVIDENCE / RISKS / TESTS |
 
 > Hooks (main-guard, guard-env) apply to subagent tool calls too — the guards hold everywhere.
-> Design (G) work: the decision-maker is **Claude Design** (MCP; Claude Code **in the terminal** — mandatory). Implementation still goes through the implementer.
+> Design (G) work: the decision-maker is **Claude Design** (MCP; check the connection with `/mcp`). Implementation still goes through the implementer. Consent/auth + the 2026-12-14 migration note → `docs/design/README.md`.
 > Design modes (stamped at scaffold): **none** = no design surface (default) · **sync** = the loop alongside development (docs/design/README.md) · **first** = prototype-before-code, D0→D2 → 🚦 GATE D before Phase 1 (`docs/design/design-first.md`).
 
 ## Part cycle
@@ -32,6 +32,8 @@ merge ritual (.gate4-ok → merge → rm) → /tidy
 - **GATE 4 approval belongs to the human.** After approval: `echo <branch> > .claude/.gate4-ok` → merge → `rm .claude/.gate4-ok`. **PR variant:** if merges happen on GitHub, the GATE 4 marker = the PR approval and main-guard never sees the merge — protect main with **branch protection** instead.
 - **Dispatch in batches, not drips:** small part = the whole approved plan in ONE implementer dispatch; larger part = coherent batches of 2–4 steps per dispatch. The implementer makes a **checkpoint commit per step** either way — granular history, few interruptions.
 - **Autonomy by design:** the branch lifecycle (create → checkpoints → merge after the GATE 4 marker) runs **without permission prompts** — solo permissions are deliberately wide (file edits, `git commit`, `git merge` pre-allowed). The human control points are the GATES; the invariants are hook-guarded (main-guard, guard-env).
+- **Background by default:** subagents (implementer, verifier) start in the background — **wait for the completion notice** before verifying ground or running a gate; meanwhile only scouts/conversation, never git, gates, or a second writer.
+- **GATE 4 CONDITIONAL → the SAME implementer:** continue it (SendMessage) with the fix list — it keeps its part context; a fresh dispatch would rebuild it.
 - **After every implementer dispatch, verify the ground:** `git log`/`git diff --stat` vs the report — subagent reports are as fallible as session reports; on contradiction fix the source, never proceed on the report alone.
 - **Cancel / rollback:** part cancelled = abandon the branch (deleting = ask first) + one line in issues + mark the spec `CANCELLED` · plan falls apart mid-IMPL = back to GATE 2 with a **delta plan** · GATE 4 finds a spec-level flaw = back to GATE 1; lesson goes to the retro.
 - **Serial by design:** one active part, one branch, one writing subagent. Scouts/verifiers may run in parallel (read-only). Need truly parallel tracks → **switch to the orchestrated template**: the living-docs are identical; swap `.claude/` + `workflow.md` and continue where you left off.
@@ -42,7 +44,7 @@ merge ritual (.gate4-ok → merge → rm) → /tidy
 2. **Make the reset safe (`/tidy`, rule 13):** after merges and ops blocks — docs synced to ground truth, rotation done, chat-only decisions swept into docs → offer the reset: **`/clear` at a part boundary (RECOMMENDED — the solo equivalent of orchestrated's fresh session)**, `/compact` mid-part. The human runs it (one keystroke); **the model cannot reset its own context** — what it can do is keep it from filling, make the reset zero-risk, and ask.
 3. **Safety net (PreCompact hook — ON by default in solo):** a long-lived session WILL compact; the ground snapshot lands in `docs/archive/compact-snapshots.md` before it happens. Quality order: `/clear` at a boundary > `/compact` > unplanned auto-compaction (still safe, thanks to the snapshot + docs discipline).
 
-- **Restart test:** after `/clear`, a fresh session must resume from CLAUDE.md + living-docs + memory alone. If it could not, that is a **docs gap** — fix the doc. *(Memory survives `/clear`: behavior lives in memory, state lives in docs, so clearing is cheap.)*
+- **Restart test:** after `/clear`, a fresh session must resume from CLAUDE.md + living-docs alone (the session-start hook prints the ground header). If it could not, that is a **docs gap** — fix the doc. *(Behavior lives in CLAUDE.md's Orchestrator contract, state lives in docs — both reload after `/clear`, so clearing is cheap.)*
 
 ## Critical rules
 

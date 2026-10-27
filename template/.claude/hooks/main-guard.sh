@@ -5,8 +5,8 @@
 # PR-side merges bypass it — pair with GitHub/GitLab branch protection for hard guarantees
 # (a merge done on GitHub never touches this hook).
 #  - blocks CODE commits on protected branches; docs-only commits allowed (*.md, docs/,
-#    module-specs/, memory-seed/, .gitignore, .env.example, LICENSE). NOTE: .claude/ is
-#    CONTROL-PLANE, not docs — hook/settings/command changes need a branch + GATE 4.
+#    module-specs/, .gitignore, .env.example, LICENSE). NOTE: .claude/** is CONTROL-PLANE, not docs —
+#    EVERY file under it (hooks, settings, AND the markdown agents/commands) needs a branch + GATE 4.
 #  - blocks COMPOUND commands containing a commit (e.g. `… && git commit`) on protected branches:
 #    the guard cannot see files created later in the same call (TOCTOU) — commit standalone.
 #  - counts UNTRACKED files as code changes.
@@ -15,7 +15,8 @@
 #    `git merge --abort/--continue/--quit` conclude an in-progress merge (no new branch) — allowed.
 #  - honors `git -C <path>` (checks the TARGET repo) and path/flag forms (`/usr/bin/git`, `git -c k=v`).
 # Command parsing is done ONCE in python (shlex) — proper quote/operator handling, not layered regex.
-# Fail-closed: python3 missing OR malformed hook input → block. Protected: VIBE_PROTECTED_BRANCHES.
+# Fail-closed: python3 missing OR malformed hook input → block; a python crash is treated as
+# "cannot parse" (blocked on protected branches). Protected: VIBE_PROTECTED_BRANCHES.
 # NOTE: the python block sits inside bash single quotes — NEVER use ' inside the python code (use \x27).
 set -u
 input=$(cat 2>/dev/null || true)
@@ -137,7 +138,7 @@ print(1 if (has_compound and commit) else 0)
 print(cherry)
 print(merge)
 print(operand)
-' 2>/dev/null) || exit 0
+' 2>/dev/null) || parsed="parsefail"   # python crash = cannot parse safely (fail-closed on protected branches)
 
 { IFS= read -r STATUS
   IFS= read -r GITC
@@ -184,7 +185,9 @@ if [ "$COMMIT" = "1" ]; then
     deny "compound command containing a commit on $branch — run the commit as a STANDALONE command so the guard can see the real tree state"
   fi
   docs_re='(^|/)(docs|module-specs|memory-seed)(/|$)|\.md$|^\.gitignore$|^\.env\.example$|^LICENSE'
-  offenders=$({ git diff --cached --name-only; git diff --name-only; git ls-files --others --exclude-standard; } 2>/dev/null | sort -u | grep -vE "$docs_re" || true)
+  changed=$({ git diff --cached --name-only; git diff --name-only; git ls-files --others --exclude-standard; } 2>/dev/null | sort -u)
+  # .claude/** is CONTROL-PLANE even when it is markdown (agents/commands are instructions) — never docs
+  offenders=$({ printf '%s\n' "$changed" | grep -E '^\.claude/'; printf '%s\n' "$changed" | grep -vE "$docs_re"; } 2>/dev/null | grep -v '^$' | sort -u || true)
   if [ -n "$offenders" ]; then
     short=$(printf '%s\n' "$offenders" | head -5 | tr '\n' ' ')
     deny "no CODE commits on $branch — open a part branch (git switch -c wip/P-N). Non-docs files (staged, modified or untracked all count): $short"

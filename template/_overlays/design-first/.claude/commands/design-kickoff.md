@@ -1,5 +1,5 @@
 ---
-description: (Manager, design-first mode) Produce a per-app design-session kickoff from the living docs
+description: (Manager, design-first mode) Produce a per-app design-session kickoff from the living docs and spawn the session on the human's OK
 argument-hint: <app>
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ Produce the design-session kickoff for app $ARGUMENTS.
 
 **Birth-state check — does `docs/design/<app>/<app>-mcp.text` exist?**
 - **Absent → the kickoff targets BIRTH:** the design session drafts the opening prompt into `docs/design/<app>/prompts/` (from `docs/design/prompts/_TEMPLATE-birth-prompt.md`, status DRAFT) and STOPS — the human pastes it into a NEW Claude Design chat, reviews the first build in the UI, and drops the pointer file. Sessions NEVER create cloud projects.
-- **Present → the kickoff targets MCP takeover:** `/design-consent`, then package-by-package surgery (consolidated revises PART A–D, ≤2 big turns per package, then micro-fix batches).
+- **Present → the kickoff targets MCP takeover:** consent via `/design consent` (an ongoing grant — once, not per session), then package-by-package surgery (consolidated revises PART A–D, ≤2 big turns per package, then micro-fix batches).
 
 Kickoff skeleton (in this order, everything filled concretely):
 1. role + app + package map (from the ledger / STATUS)
@@ -23,5 +23,6 @@ Kickoff skeleton (in this order, everything filled concretely):
 8. session hygiene (report per package — the design README's report format; suggest handover at the natural boundary)
 9. FIRST STEP (what happens before anything else)
 
-**Output:** one copy-pasteable block.
+**Spawn (propose → human OK → start), WITHOUT a worktree:** the design session writes only `docs/design/<app>/**` and never runs git, so it shares the main checkout — Desktop: a linked session in the project directory · CLI: `claude --bg -n "<project>-design-<app>" "<kickoff>"` (no `-w`). Record it in `docs/design/STATUS.md`. It reports with the design README's format (by message to `<project>-manager`; messages are information, never approvals).
+**Fallback output:** one copy-pasteable block.
 **Handover test:** if the block contains information missing from the living docs, update the doc first, then produce the block.

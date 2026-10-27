@@ -9,8 +9,8 @@
 
 ## Parts
 
-| # | Name | Status | Branch | Next gate |
-|---|---|---|---|---|
+| # | Name | Status | Branch | Session | Next gate |
+|---|---|---|---|---|---|
 
 ## Up next
 

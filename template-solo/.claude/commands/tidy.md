@@ -14,7 +14,7 @@ Run the tidy ritual (after a merge, an ops block, or on request):
 ```
 TIDY DONE — docs are the ground truth.
 - Part boundary (just merged)? → /clear is RECOMMENDED — the solo equivalent of a fresh
-  session; I resume from CLAUDE.md + living-docs + memory.
+  session; I resume from CLAUDE.md + living-docs.
 - Mid-part? → /compact is the cheap option.
 Either is safe now. If you do nothing, auto-compaction stays covered by the PreCompact snapshot.
 ```

@@ -3,7 +3,7 @@
 > If the project has a `shared-spine.md`, this spec defines **only the deltas** from it — never restate the common flow.
 
 - **Status:** draft | gate1-approved | gate2-approved | impl | gate3 | gate4 | merged | CANCELLED
-- **Branch:** `wip/P-N`
+- **Branch:** `wip/P-N` *(or the worker worktree's branch — the GATE 4 marker uses this exact name)*
 - **Gate profile:** full | gates-1+2-combined — *ALWAYS full if there is a money/auth/data-loss surface*
 - **Dependencies:** <part / decision / NEEDS item>
 

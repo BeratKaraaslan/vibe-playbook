@@ -1,6 +1,6 @@
 # Design-first mode — prototype before code (SOLO)
 
-> **← playbook v8** · Present because this project was scaffolded with `--design first`.
+> **← playbook v9** · Present because this project was scaffolded with `--design first`.
 > Prototypes live in **Claude Design cloud projects**; this repo is the **control-plane** (briefs, prompts, ledger, pointer files) until handoff. After GATE D, the build phase uses the sync loop ([README.md](README.md) steps 4–7) for implement → guardian → report.
 
 **Solo serial variant:** ONE session (the solo orchestrator) drives D0 → D1 → D2 **sequentially** — usually one app surface. Same birth-manual / life-MCP rules and prompt skeletons as the orchestrated profile; [STATUS.md](STATUS.md) is the ledger; the kickoff block lives in STARTGUIDE §3b — there is deliberately no extra command.
@@ -26,11 +26,11 @@ H   HANDOFF   export the DS bundle + tokens into the repo
 ## Birth is manual, life is MCP takeover
 
 1. The session DRAFTS the opening prompt (project-birth settings + first-package spec) → saves it to `docs/design/prompts/` with a status header (`DRAFT → APPROVED → APPLIED → SUPERSEDED`), then STOPS.
-2. The HUMAN pastes it into a NEW Claude Design chat and reviews the first build in the UI.
+2. The HUMAN starts the project — pastes it into a NEW Claude Design chat, or (preferred where the Design template is enabled) runs `/design <brief>` from Claude Code — and reviews the first build.
 3. The HUMAN drops the pointer file `docs/design/<app>-mcp.text` — content: the project URL + "auth via /design-login".
-4. Only after the pointer exists: the session runs `/design-consent` and does direct MCP surgery for all later packages/fixes.
+4. Only after the pointer exists: consent via `/design consent` (an ongoing grant — revoke with `/design revoke`), then direct MCP surgery for all later packages/fixes.
 
-Hard rules: the session **NEVER creates cloud projects** · no pointer file = no MCP writes · `/design-consent` is per-session **by design** (a deliberate consent boundary, not a defect).
+Hard rules: the session **NEVER creates cloud projects** · no pointer file = no MCP writes · consent is the human's explicit `/design consent` grant (a deliberate consent boundary — revocable any time).
 
 *(Multiple app surfaces? Nest per app — `docs/design/<app>/{brief.md, prompts/, ledger.md, <app>-mcp.text}` — and run them one after another, never in parallel: solo is serial by design.)*
 
@@ -50,9 +50,10 @@ Business logic, flows, and rules pinned during prototyping are **written into th
 - Edits = exact-anchor splices; run `node --check` after every splice.
 - Template holes: dotted lookups only (`{{ a.b }}`); ternaries fail silently.
 - Verify via JS against the **device-frame subtree** (not `document.body` — source literals pollute it); ≤~8 actions per exec.
-- `serve_url` tokens expire ~1h and are never user-facing (share only claude.ai/design links).
+- `serve_url` tokens expire ~1h and are never user-facing (share only the claude.ai project/artifact links).
 
 ## Honest limits
 
 - The shipped `.mcp.json` still needs ONE interactive per-user approval on first use — a checked-in settings.json cannot pre-approve it.
-- Auth = `/design-login`; writes = per-session `/design-consent`. Terminal (CLI) Claude Code is mandatory for the connection.
+- Design-system access = `/design-login`; writes = `/design consent` (ongoing grant; `/design revoke`). The endpoint in `.mcp.json` is undocumented — verify with `/mcp`.
+- **2026-12-14:** the standalone Claude Design site closes — new designs become claude.ai artifacts; standalone project links (incl. old `<app>-mcp.text` pointers) stop working. A full design-track rework is deferred; until then keep the loop, record the new artifact URL in the pointer file.

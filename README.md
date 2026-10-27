@@ -18,7 +18,7 @@ npx vibe-playbook init solo my-project --design sync            # opt into the d
 
 The CLI copies the chosen template, restores `.gitignore`, makes the hooks executable, and stamps the directory with its profile+version+design-mode (`.claude/.vibe-playbook`) — it refuses to overlay a different profile or design mode onto an existing scaffold (that would leave stale files mixed in) and refuses any symlink/hardlink on the write path. No dependencies; Node ≥ 18. If an init exits nonzero, delete the target before retrying (a failed run may leave a partial scaffold). Prefer not to use npm? Clone this repo and copy the template directory by hand (see the quick starts below).
 
-Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@8.4.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
+Tip: pin the EXACT version for reproducible scaffolds — `npx vibe-playbook@9.0.0 init solo my-project` (a major pin like `@8` still floats to newer 8.x). A running project keeps the version it was born with; there is deliberately **no in-place upgrade** (see Versioning).
 
 ## Pick a profile
 
@@ -26,12 +26,12 @@ The split is by **audience** as much as by project shape:
 
 | | [`template/`](template/) — **Orchestrated** | [`template-solo/`](template-solo/) — **Solo** |
 |---|---|---|
-| **Made for** | **software developers** — you read specs and diffs, coordinate sessions, run parallel tracks | **vibe coders** — the agent drives all git/terminal mechanics; you describe, approve at gates in plain language, and flow *(developers who want low ceremony: also you)* |
-| Sessions | multiple sessions, 4 roles (Manager · Dev · Ops · Design) | **ONE session + subagents** |
+| **Made for** | **software developers** — you read specs and diffs, run parallel tracks; the Manager spawns and tracks the worker sessions | **vibe coders** — the agent drives all git/terminal mechanics; you describe, approve at gates in plain language, and flow *(developers who want low ceremony: also you)* |
+| Sessions | multiple sessions, 4 roles (Manager · Dev · Ops · Design) — the Manager runs the workers | **ONE session + subagents** |
 | Development | interactive dev sessions (you watch the work) | `implementer` subagent (you read compact reports) |
 | Code reading | the dev session's job | `scout` subagent — code never enters the main context |
-| Parallel work | parallel tracks via git worktrees | serial by design — one part, one branch at a time |
-| Permissions | standard — commit/merge ask first | **wide** — edits/commit/merge pre-allowed; the gates are the control points |
+| Parallel work | parallel worker sessions, each in its own git worktree (≤3) | serial by design — one part, one branch at a time |
+| Permissions | standard — checkpoint commits free, merge/push/spawn ask first | **wide** — edits/commit/merge pre-allowed; the gates are the control points |
 | Ceremony | higher (kickoffs, handovers) | low — `/part` drives everything |
 | Best for | larger projects, parallel tracks, long phases | small/medium projects, solo flow, speed |
 
@@ -51,7 +51,8 @@ Modes differ by **whole files only**; the mode is stamped in `.claude/.vibe-play
 
 ## Requirements
 
-- **Claude Code** (CLI). The design track (modes `sync`/`first`) uses the **Claude Design MCP** as design decision-maker — the scaffold ships it project-scope in `.mcp.json` (canonical server name `claude-design`); first use asks each user for ONE interactive approval (a checked-in settings.json cannot pre-approve it), auth = `/design-login`, writes = per-session `/design-consent`. The connection requires Claude Code run **from the terminal**. *(User-scope alternative: `claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp`.)*
+- **Claude Code**, kept current (`claude update`). Orchestrated Manager-run sessions need **≥ 2.1.224** (cross-session messaging; older versions use the paste/relay fallback); solo assumes background subagents (≥ 2.1.198). Auto mode (the default start mode since 2.1.283) does not replace the hooks: its classifier allows `.env` reads and pushes to the default branch.
+- **Design track** (modes `sync`/`first`): the **Claude Design MCP** is the design decision-maker — the scaffold ships it project-scope in `.mcp.json` (canonical server name `claude-design`; the endpoint is undocumented — verify with `/mcp`); first use asks each user for ONE interactive approval (a checked-in settings.json cannot pre-approve it), design-system access = `/design-login`, writes = `/design consent` (an ongoing grant; `/design revoke`). *(Dated note: the standalone Claude Design site closes 2026-12-14 — new designs become claude.ai artifacts; where the Design template is enabled, `/design <brief>` from Claude Code creates one directly and is the preferred birth path.)* *(User-scope alternative: `claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp`.)*
 - `git`, `bash`, `python3` (used by the hooks). macOS/Linux (on Windows, use WSL).
 - Node ≥ 18 only if you scaffold via `npx` (the templates themselves need no Node).
 - First run must be **interactive**: Claude Code applies a project's `settings.json` permissions only after you accept the workspace-trust prompt.
@@ -77,16 +78,16 @@ npx vibe-playbook init orchestrated my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template/. my-project/ && cd my-project
 #   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh && rm -rf _overlays
-git init && git add -A && git commit -m "scaffold: playbook v8 template"
+git init && git add -A && git commit -m "scaffold: playbook v9 template"
 ```
 
 1. **Adapt (~5 min):** fill the `CLAUDE.md` placeholders (project name; test/lint/typecheck commands once the stack is locked) and replace the `npm` examples in `.claude/settings.json` → `allow` with your stack's commands.
-2. **Phase 0:** open a Claude Code session in the project directory and paste the Phase 0 kickoff from [`template/STARTGUIDE.md`](template/STARTGUIDE.md). The session becomes the **Manager** and plans the project with you (PRD → architecture → part breakdown). No code is written in Phase 0; it ends with the biggest gate — your approval locks the decisions.
+2. **Phase 0:** open a Claude Code session named `<project>-manager` in the project directory (`claude -n my-project-manager`) and paste the Phase 0 kickoff from [`template/STARTGUIDE.md`](template/STARTGUIDE.md). The session becomes the **Manager** and plans the project with you (PRD → architecture → part breakdown). No code is written in Phase 0; it ends with the biggest gate — your approval locks the decisions.
 3. **Daily flow:**
-   - New part: `/new-part P-N` in the manager session → paste the generated kickoff into a **fresh** session.
-   - Ride the gates (table above). On GATE 4 approval the session marks `.claude/.gate4-ok`, merges, removes the marker, updates the docs.
-   - **Parallel parts run in separate git worktrees** (the kickoff includes the command) — never two sessions in one directory.
-   - Ops/infra work runs in its own persistent session; everything syncs through `infra-state.md` + `NEEDS-FROM-USER.md`.
+   - New part: `/new-part P-N` in the manager session → it proposes the spawn → **you OK it** → the worker starts in its own git worktree (Desktop: linked session · CLI: `claude --bg -n "<project>-P-N" -w P-N`). Up to 3 workers in parallel; never two sessions in one directory.
+   - GATES 1–3 happen **in the worker** (you approve there — click it, or `claude attach <id>`); the worker sends the Manager a one-line report at every stop, and the Manager keeps a "waiting on you" gate queue. Messages are information, never approvals.
+   - GATE 4 happens **in the Manager**: verifier (+ `/code-review high` on `full` parts) → your approval → marker + merge → docs → the worker is closed and its worktree removed. CONDITIONAL → the fix list goes back to the same worker.
+   - Ops/infra work runs in ONE persistent Ops worker; everything syncs through `infra-state.md` + `NEEDS-FROM-USER.md`. No messaging available? `/new-part` falls back to a paste-able kickoff block and you relay reports.
 
 Full guide: [`template/STARTGUIDE.md`](template/STARTGUIDE.md)
 
@@ -97,7 +98,7 @@ npx vibe-playbook init solo my-project && cd my-project
 # — or manually from a clone:
 #   cp -R vibe-playbook/template-solo/. my-project/ && cd my-project
 #   mv gitignore .gitignore && chmod +x .claude/hooks/*.sh && rm -rf _overlays
-git init && git add -A && git commit -m "scaffold: playbook v8 solo template"
+git init && git add -A && git commit -m "scaffold: playbook v9 solo template"
 ```
 
 1. **Adapt (~5 min):** same as above (CLAUDE.md placeholders + settings allow list). The PreCompact snapshot hook is **on by default** in this profile.
@@ -105,8 +106,8 @@ git init && git add -A && git commit -m "scaffold: playbook v8 solo template"
 3. **Daily flow — everything in that one session:**
    - A part: `/part P-N` — drives spec → gates → implementation → verification → merge, stopping at every 🚦 for you. **Between gates it never prompts you**: permissions are deliberately wide (edits, commit, merge pre-allowed); the invariants are hook-guarded, the gates are your control points.
    - Dispatches go in batches: a small part = its whole approved plan in one implementer run; larger parts = 2–4 step packages — with a checkpoint commit per step either way.
-   - The session's context stays clean by design: code questions go to the **scout**, changes to the **implementer**, GATE 4 to the **verifier** — only compact reports come back; the orchestrator verifies each report against `git log`/`git diff --stat`.
-   - After every merge the session runs `/tidy` and offers the reset: **`/clear` at part boundaries (recommended — the solo equivalent of a fresh session)**, `/compact` mid-part; it resumes from the docs + memory. Unplanned auto-compaction stays covered by the PreCompact snapshot.
+   - The session's context stays clean by design: code questions go to the **scout**, changes to the **implementer** (runs in the background — the session waits for its completion notice before git/gates), GATE 4 to the **verifier** — only compact reports come back; the orchestrator verifies each report against `git log`/`git diff --stat`. GATE 4 fixes go back to the same implementer.
+   - After every merge the session runs `/tidy` and offers the reset: **`/clear` at part boundaries (recommended — the solo equivalent of a fresh session)**, `/compact` mid-part; it resumes from CLAUDE.md + the docs. Unplanned auto-compaction stays covered by the PreCompact snapshot.
    - Serial by design: one part, one branch, one writing subagent. Need parallel tracks? Switch to the orchestrated profile — the docs carry over unchanged.
 
 Full guide: [`template-solo/STARTGUIDE.md`](template-solo/STARTGUIDE.md)
@@ -116,11 +117,12 @@ Full guide: [`template-solo/STARTGUIDE.md`](template-solo/STARTGUIDE.md)
 | Hook | Event | What it does |
 |---|---|---|
 | `guard-env.sh` | PreToolUse | Blocks the **common accidental paths** to `.env*` (any suffix depth): direct tool reads/writes, plain Bash subcommands, globs, case variants, direct symlinks on tool paths, Grep globs. Only `.env.example` stays fully accessible; fail-closed if python3 is missing. An **accident guard, not a security boundary** — a script/subprocess that opens the file itself is beyond string matching (use Claude Code sandboxing for OS-level limits). On a block the agent must stop and ask you |
-| `main-guard.sh` | PreToolUse (Bash) | Blocks code commits, cherry-picks, and unmarked merges on protected branches (`main`/`master` default, `VIBE_PROTECTED_BRANCHES` to extend); exact-branch GATE 4 marker (`.claude/.gate4-ok`); flag forms (`git -C . commit`) covered; docs-only commits stay free |
+| `main-guard.sh` | PreToolUse (Bash) | Blocks code commits, cherry-picks, and unmarked merges on protected branches (`main`/`master` default, `VIBE_PROTECTED_BRANCHES` to extend); exact-branch GATE 4 marker (`.claude/.gate4-ok`); flag forms (`git -C . commit`) covered; docs-only commits stay free — `.claude/**` is control-plane, never docs |
 | `secret-scan.sh` | UserPromptSubmit | If your message looks like it contains a secret (connection string, API key, JWT, private key), it reminds the model of the **leak protocol**: never repeat the value, delete it wherever it was written, recommend rotation — chat history cannot be unsaid |
-| `pre-compact.sh` | PreCompact | Snapshots branch/status/log to `docs/archive/compact-snapshots.md` before any compaction (optional in orchestrated, **default-on in solo**) |
+| `pre-compact.sh` | PreCompact | Snapshots branch/status/log to `docs/archive/compact-snapshots.md` before any compaction — rooted at the session's own tree, so worktrees snapshot their own branch (optional in orchestrated, **default-on in solo**) |
+| `session-start.sh` | SessionStart | Prints a compact GROUND header (tree · branch · uncommitted count · last 3 commits · progress "Now") at startup/resume/`/clear`/compaction — worktree-aware, context-only, never blocks |
 
-Hooks apply to subagent tool calls too, and fail closed if python3 is missing. They are **accident guards** against drift and mistakes — not security boundaries: a determined process, a helper script, or a PR-side merge is beyond string matching. For hard guarantees: branch protection, clean-runner CI, and Claude Code sandboxing.
+Hooks apply to subagent tool calls too, and fail closed if python3 is missing or their parser crashes. They are **accident guards** against drift and mistakes — not security boundaries: a determined process, a helper script, or a PR-side merge is beyond string matching. For hard guarantees: branch protection, clean-runner CI, and Claude Code sandboxing.
 
 ## Commands
 
@@ -131,16 +133,16 @@ Hooks apply to subagent tool calls too, and fail closed if python3 is missing. T
 | `/wip` | ✅ | ✅ | Small checkpoint commit on the part branch |
 | `/gate3` | ✅ | ✅ | Run test/lint/typecheck → compact evidence block |
 | `/gate4` | ✅ | ✅ | GATE 4: verifier subagent + approval ritual |
-| `/new-part` | ✅ | — | (Manager) produce a fresh-session kickoff from the living-docs |
+| `/new-part` | ✅ | — | (Manager) produce a worker kickoff from the living-docs and spawn the worker on your OK |
 | `/part` | — | ✅ | Drive a part end to end, stopping at every gate |
 | `/tidy` | — | ✅ | Sync docs to ground truth → declare "safe to compact" |
-| `/design-kickoff` | ✅ (`--design first`) | — | (Manager) per-app design-session kickoff for the design phase (D0→D2) |
+| `/design-kickoff` | ✅ (`--design first`) | — | (Manager) per-app design-session kickoff + spawn (no worktree) for the design phase (D0→D2) |
 
 ## Repo layout
 
 ```
 PLAYBOOK.md        # the full methodology + design rationale
-CHANGELOG.md       # versioned process changes (v1 → v8)
+CHANGELOG.md       # versioned process changes (v1 → v9)
 README.md          # this file
 package.json       # npm package (major version = playbook version)
 bin/cli.js         # zero-dependency scaffolder (npx vibe-playbook init …)

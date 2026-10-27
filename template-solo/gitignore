@@ -3,5 +3,6 @@
 !.env.example
 .claude/.gate4-ok
 .claude/settings.local.json
+.claude/worktrees/
 .DS_Store
 node_modules/

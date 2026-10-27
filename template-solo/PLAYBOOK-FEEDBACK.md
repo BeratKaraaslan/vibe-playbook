@@ -5,7 +5,7 @@
 > the human hands this file back to the canonical **vibe-playbook** repo, where it drives the next
 > playbook version (§15 backflow). Models keep improving — this file is how the workflow keeps up.
 >
-> ← playbook v8 · profile: <orchestrated|solo — Phase 0 fills> · project: <name> · started: <date>
+> ← playbook v9 · profile: <orchestrated|solo — Phase 0 fills> · project: <name> · started: <date>
 
 ## Rules for WRITING entries (project side)
 

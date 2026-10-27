@@ -7,7 +7,7 @@
 # This is an ACCIDENT GUARD, not a security boundary: a script or subprocess that opens the file
 # itself (python/node/helper .sh, hardlinks, variable-built paths) is beyond string matching —
 # for OS-level guarantees use Claude Code sandboxing + keep secrets outside the working tree.
-# Fail-closed: if python3 is missing, every guarded call is blocked (python3 is a stated requirement).
+# Fail-closed: if python3 is missing OR the check crashes, the call is blocked (python3 is a stated requirement).
 # On a block the model must STOP and ask the user — never retry via another path.
 # NOTE: the python block sits inside bash single quotes — NEVER use ' inside the python code (use \x27).
 set -u
@@ -95,4 +95,8 @@ if bad:
     sys.exit(2)
 sys.exit(0)
 '
-exit $?
+rc=$?
+# fail-closed: only an explicit 0 allows; a python crash (exit 1, traceback) must never pass silently
+[ "$rc" -eq 0 ] && exit 0
+[ "$rc" -eq 2 ] || printf 'BLOCKED (guard-env): internal hook error (exit %s) — failing closed; update or remove the hooks.\n' "$rc" >&2
+exit 2

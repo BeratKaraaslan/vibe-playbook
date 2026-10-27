@@ -25,6 +25,9 @@ jobs:
           test -f /tmp/smoke/.gitignore
           test ! -f /tmp/smoke/gitignore
           test -x /tmp/smoke/.claude/hooks/guard-env.sh
+          test -x /tmp/smoke/.claude/hooks/session-start.sh
+          test ! -e /tmp/smoke/memory-seed
+          grep -qxF ".claude/worktrees/" /tmp/smoke/.gitignore
           test -f /tmp/smoke/.claude/.vibe-playbook
           if node bin/cli.js init orchestrated /tmp/smoke; then echo "mix guard FAILED"; exit 1; else echo "mix guard OK"; fi
           if node bin/cli.js init solo /tmp/smoke; then echo "collision guard FAILED"; exit 1; else echo "collision guard OK"; fi

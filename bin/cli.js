@@ -51,7 +51,7 @@ Profiles:
                 mechanics, you approve at gates in plain language. Recommended start;
                 switch to orchestrated when you need parallel tracks (docs are identical).
   orchestrated  For SOFTWARE DEVELOPERS: multi-session (Manager/Dev/Ops/Design), you read
-                specs/diffs and coordinate sessions; parallel tracks via git worktrees.
+                specs/diffs; the Manager spawns worker sessions in their own worktrees.
 
 Options:
   target-dir    Where to scaffold (default: current directory). Created if missing.
@@ -253,7 +253,7 @@ function main() {
   console.log(`Scaffolded the ${profile} profile (design mode: ${mode}) into ${rel} (${files.length} template files + the provenance stamp).
 
 Next steps:
-  1. cd ${rel === "." ? "" : rel + " && "}git init && git add -A && git commit -m "scaffold: playbook v8 ${profile} template"
+  1. cd ${rel === "." ? "" : rel + " && "}git init && git add -A && git commit -m "scaffold: playbook v9 ${profile} template"
   2. Open STARTGUIDE.md — adapt CLAUDE.md + .claude/settings.json (~5 min).
   3. Start a Claude Code session in that directory and paste the Phase 0 kickoff from STARTGUIDE.md.${
     mode === "first"

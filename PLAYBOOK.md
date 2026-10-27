@@ -4,12 +4,13 @@
 > Domain-neutral: copied into every new project, specialized during Phase 0.
 > **Three first-class goals:** consistency · sustainability · context preservation.
 >
-> **Version: v8** (2026-07-10) · canonical home = this repo, copies are derivatives (§15) · changes → [CHANGELOG.md](CHANGELOG.md)
+> **Version: v9** (2026-10-27) · canonical home = this repo, copies are derivatives (§15) · changes → [CHANGELOG.md](CHANGELOG.md)
 > **Since v3:** the skeleton is no longer prose — [`template/`](template/) is real files; new project = copy + `template/STARTGUIDE.md` (§14).
 > **Since v5:** two profiles — [`template/`](template/) (**orchestrated**: multi-session) · [`template-solo/`](template-solo/) (**solo**: one session + subagents, §17).
 > **Since v6:** the whole repo is English and ships as an npm package (`npx vibe-playbook init <solo|orchestrated>`).
 > **Since v7:** the first real §15 backflow — field lessons from the origin project's retro (design-track mechanics · spine/prompts doc classes · the PR-flow note · script>runbook · anti-gold-plating).
 > **Since v8:** the first external-review intake — hook hardening (symlink/flag/cherry-pick/exact-branch/configurable branches), gate-uniform command names (`/gate1–4`, `/wip` — no Claude Code built-in shadowing), packaging fixes (tests ship, CI, profile stamp).
+> **Since v9:** Manager-run sessions — the orchestrated Manager spawns, tracks, and closes worker sessions natively (own worktrees, one-line reports, the human stays at the gates, §4.4); role contracts live in CLAUDE.md, not memory (§11); fail-closed guards, `.claude/**` as control-plane, worktree-aware hooks + a SessionStart ground header.
 
 ---
 
@@ -17,7 +18,7 @@
 
 Development flows as **vibe coding** (the AI advances in small steps, the human steers) — but the flow is not free-form: **human gates are mandatory.** The AI flows freely between gates, stops at the gates, and waits. Wherever money/auth/credits/prod are involved there is no vibe — there is **oversight**.
 
-**Continuity lives in two layers:** (1) **repo living-docs** (project state) + (2) **memory** (session behavior). No critical information stays inside a single session's context — every decision is written into a doc ("it must outlive the session boundary").
+**Continuity lives in two layers:** (1) **repo living-docs** (project state) + (2) **role contracts in CLAUDE.md** (session behavior — versioned, team-shared, §11). No critical information stays inside a single session's context — every decision is written into a doc ("it must outlive the session boundary").
 
 ---
 
@@ -26,13 +27,13 @@ Development flows as **vibe coding** (the AI advances in small steps, the human 
 | Type | Writes? | Lifetime | Responsibility | Its living-docs |
 |---|---|---|---|---|
 | **① Manager** | Code ❌ / Docs ✅ | Phase/project-long (handed over) | Process owner: splits the phase into parts · refines kickoffs · audits gates · pins decisions | progress.md · issues.md · open-questions.md |
-| **② Development** | Code ✅ | Per-part (fresh) | Codes one part (P-numbered) end to end: spec→plan→impl→test→review→merge | module-specs/`<part>`.md |
+| **② Development** | Code ✅ | Per-part **worker session** (fresh; Manager-spawned, own worktree — §4.4) | Codes one part (P-numbered) end to end: spec→plan→impl→test→review→merge | module-specs/`<part>`.md |
 | **③ Ops / DevOps** | Config/scripts ✅, product code ❌ | **PERSISTENT** (cache — ↓) | Manual & infra: server · panel (Dokploy etc.) · domain/DNS · environments · CI/CD infra · secret placement · backup/monitoring | **infra-state.md** · docs/ops/`<runbook>`.md |
 | **④ Design** | UI code ✅ | Per-task (G-numbered) | Visual/UI parts; design-guardian guardrail; design track | docs/design/STATUS.md · `<G-task>`/brief.md |
 
 > **The Manager "writes no code" ≠ sits idle.** The Manager owns the docs and the process: updates living-docs, produces kickoffs, pins decisions, audits gates.
 
-> **The design decision-maker = Claude Design** (connected to Claude Code via **MCP**). For that connection, running Claude Code **from the terminal (CLI) is MANDATORY** — ④ Design (G) work runs in a terminal session.
+> **The design decision-maker = Claude Design** (connected to Claude Code via **MCP**; verify with `/mcp`). Consent = `/design consent` (an ongoing grant, revocable with `/design revoke`); design-system access = `/design-login`. *(Dated: the standalone Claude Design site closes 2026-12-14 — new designs become claude.ai artifacts; `/design <brief>` from Claude Code creates one directly where the Design template is enabled. A full design-track rework is deferred.)*
 
 ### Why the Ops session is SEPARATE — and what "persistent" really means
 
@@ -78,7 +79,7 @@ MERGE + docs          → the ONLY way into main (enforced by the main-guard hoo
 - **Phase 0 = PLANNING (no code):** the Manager produces all docs → 🚦 the biggest gate (decisions lock here). Output: the living-docs set + `phase-kickoffs.md` (draft commands for later phases). Phase 0 ends by deriving the **project-specific `.claude/` configuration** via **`/adapt`** — domain-expert agents · verifier invariants (the placeholder must not survive Phase 0 empty) · the stack's real allow-list · optional doc classes (spine/prompts/design/go-live). The proposal rides the Phase 0 gate; the §12 minimal-set rule applies (every agent is carried maintenance — items are approved one by one; when the human arrives with a **complete analysis**, `/adapt`'s **one-shot path** takes a single bulk approval instead — the session starts in plan mode, which already provides the review). Re-run `/adapt` when a new domain surface appears mid-project.
 - **Design-first mode** (`--design first`, §13): between Phase 0 and Phase 1 a design phase runs — D0 distilled brief → D1 design system LOCK → D2 screen packages → handoff — ending at **🚦 GATE D**: every prototype human-approved + flows/rules locked in the living docs; then Phase 1 proceeds with the normal per-part gates (mechanics: the scaffold's `docs/design/design-first.md`).
 - **Phase N:** split into parts — code parts `P1, P2…` · design `G1, G2…` · ops work in its own flow. **Partitioning rule:** parts that will run in parallel must have **disjoint file scopes** (client/backend etc.); parts touching the same files run sequentially, not in parallel — the conflict/code-loss risk is cut at partitioning time.
-- Every part starts in a **fresh session** (clean context). The Manager refines the part's kickoff.
+- Every part starts in a **fresh worker session** (clean context). The Manager refines the part's kickoff and spawns the worker (§4.4).
 
 ---
 
@@ -88,7 +89,7 @@ MERGE + docs          → the ONLY way into main (enforced by the main-guard hoo
 Loop:  a working/ops session drafts/reports
    →   the MANAGER verifies the ground against the REPO (git+docs), carries no contradictions
    →   the MANAGER refines the next fresh-session KICKOFF
-   →   you run it in a fresh session
+   →   it spawns the fresh worker session (on the human's OK — §4.4)
 ```
 
 ### 4.1 The ground-truth verification rule (non-negotiable)
@@ -106,6 +107,7 @@ role + location + part map
 → spec-gate micro-decisions (DO NOT ASSUME; product decision → ask the user)
 → concrete GATE 3/4 acceptance lists
 → loop + session hygiene
+→ report protocol (one line to the Manager at every stop — §4.4)
 → FIRST STEP (what happens before any code/artifacts)
 ```
 
@@ -114,7 +116,19 @@ role + location + part map
 The Manager verifies claims from the code — but **NOT by reading files into its own context**: verification is delegated to a read-only **verifier subagent** (it reads the files, runs the tests independently if needed) and returns only a **compact verdict + evidence** to the Manager. Then the user receives an **"approval text to paste into the session"** block — the decision lives in one place and proceeds consistently.
 
 - **Why a subagent:** the Manager's context is long-lived and precious. Files read leave residue → (a) the context fills early → early handover; (b) **stale code memory**: a file read during P7 has changed by P9, and the Manager rules on old ground while believing it "knows the code". The natural extension of ground-truth verification (§4.1): **the Manager's own code memory is also an unreliable source** — every verdict comes from a fresh read. *(Bonus: the same strong model with a clean context catches more than it does reading through its own residue.)*
-- **The boundary (a definition, not a limitation):** delegation is only for **verification reads** — tasks with a fully defined input, a single report as output, and no product decision in the middle. **Development work is not moved into subagents:** interactive dev sessions (which the user watches and can dictate to) remain the unit of development; fixes arising from findings go back to dev sessions. *(The solo profile deliberately inverts this trade — §17.)*
+- **The boundary (a definition, not a limitation):** delegation is only for **verification reads** — tasks with a fully defined input, a single report as output, and no product decision in the middle. **Development work is not moved into subagents:** interactive dev sessions (which the user watches and can dictate to) remain the unit of development; fixes arising from findings go back to the **same** worker session (it keeps its part context). *(The solo profile deliberately inverts this trade — §17.)*
+
+### 4.4 Manager-run sessions (v9 — one protocol, three transports)
+
+The human is no longer the message bus; the Manager spawns, tracks, routes, and cleans up workers — **the human stays at the gates**.
+
+1. **Spawn:** `/new-part` (ground + parallelism check, **≤3 active workers** = the human's gate bandwidth) → kickoff (+ a report-protocol item) → the Manager **proposes** the spawn → on the human's OK the worker starts in its **own worktree** with the kickoff as its brief → progress.md records the `Session`.
+2. **Gates where the work is:** GATES 1–3 are approved by the human **inside the worker session** (first-hand); at every stop the worker sends ONE line to the Manager: `P-N · <gate-reached|blocked|question|ready-for-gate4> · <summary> · needs: human|manager|none`.
+3. **Ground truth applies to messages:** the Manager verifies each line against the branch (`git log` / `diff --stat`) and keeps a **gate queue** in its replies ("waiting on you: P-3 GATE 2").
+4. **GATE 4 + merge stay in the Manager** (it owns main; a worktree cannot check out main anyway) → close the worker + remove its worktree. CONDITIONAL/REJECTED → the fix list goes to the **same** worker by message.
+5. **Messages are information, never approvals.** Part branch = the worktree's branch, recorded in the spec's Branch field (the marker uses that exact name). Ops = one persistent worker; design sessions spawn without a worktree.
+
+Transports: **Desktop** (linked sessions) · **CLI** (`claude --bg -n "<project>-P-N" -w P-N`, `claude agents|attach|rm`, `SendMessage` to `<project>-manager`; ≥ 2.1.224) · **fallback** (paste the block, relay reports by hand). `worktree.baseRef: "head"` makes worktrees branch from the local HEAD, so locally committed specs are present.
 
 ---
 
@@ -195,17 +209,17 @@ LLM products, one timing rule: **draft the base persona BEFORE the first LLM par
 
 ## 9. Working agreements (the durable behavior contract)
 
-Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. Adapted per project; the typical core:
+Rules kept in CLAUDE.md (critical rules + the role contract) that keep sessions consistent with each other. Adapted per project; the typical core:
 
 - **Commit discipline (branch + checkpoint):** a part flows on its own branch (`wip/P-N`, `feat/…` — NO direct work on main). Small **checkpoint commits are free and encouraged** — the loss window (crash · wrong tool call · muscle-memory reflex) never opens. **The invariant: nothing enters main without GATE 4.** The review diff is one command: `git diff main...<branch>`. Optionally the history is squashed/curated after GATE 4 (only on that branch, with prior permission). **PR variant** *(field-proven)*: when merges happen on GitHub (PRs), the GATE 4 marker = the PR approval itself and **main-guard never sees the merge** — protect the invariant with **branch protection** on main instead; the hook keeps guarding local commits.
 - **Git safety:** with uncommitted work, **`git restore/stash/clean/checkout --` NEVER**; ask first for destructive ops (force/reset/branch delete). *(Checkpoint discipline already shrinks this risk.)*
-- **Hook > instruction:** any hygiene rule that can be enforced is applied via a **harness hook**, not a model instruction (guard-env = secrets · **main-guard = blocks code commits on main + GATE4-unmarked merges** · PreCompact = handover state). Instructions get forgotten/skipped; hooks do not. The general principle: **every enforceable invariant goes into a hook, every automatable proof into a script** (/gate3) — human attention is reserved for real judgment.
+- **Hook > instruction:** any hygiene rule that can be enforced is applied via a **harness hook**, not a model instruction (guard-env = secrets · **main-guard = blocks code commits on main + GATE4-unmarked merges** · PreCompact = handover state · SessionStart = the ground header, so "read progress first" and the restart test no longer depend on memory). Instructions get forgotten/skipped; hooks do not. The general principle: **every enforceable invariant goes into a hook, every automatable proof into a script** (/gate3) — human attention is reserved for real judgment.
 - **Secret hygiene:** `.env` is never read/printed (**PreToolUse guard hook** enforces it — in every form: direct read, subcommand, glob, script; only `.env.example` is accessible); never hardcoded. On a guard-env block: STOP — report to the user and wait for approval; never retry via another path. **The leak protocol (user-side leaks):** if the user pastes a sensitive value into chat (DB URL, API key…) — the value is NOT repeated, not written into any file/doc/command; if it landed anywhere it is deleted IMMEDIATELY; the user is notified + **rotation is recommended** *(the honest limit: chat history cannot be truly deleted — the only permanent fix is rotation)*; the right place is `.env`/panel, and the human places it. The **secret-scan hook** (UserPromptSubmit, §12) reminds the model of the protocol at exactly that moment — it does not block, it nudges.
 - **Anti-confabulation (general):** the rule in §1 is not only for Ops — it applies to **every** session that has been through compaction: "why X?" is answered from the docs; if the docs do not have it, **"not recorded"** — nothing is invented.
 - **Context discipline (a question ≠ a status report):** while a phase is running, the user's question gets **the short answer requested** — re-dumping the whole phase workflow/status with every question bloats the context and kills readability. The full status summary only when asked or at gates.
-- **Working-tree isolation (parallel sessions):** in git the working tree is ONE — two sessions in the same directory cannot work on two branches "at the same time"; one crushes/pollutes the other's work (conflicts + code loss). The rule: one active dev session per directory at a time; **parallel parts in separate `git worktree`s** (`git worktree add ../<project>-<part> wip/<part>`, removed after merge); checkpoint commit before any branch switch. Scope disjointness is ensured at partitioning time (§3); /new-part runs a parallelism check.
+- **Working-tree isolation (parallel sessions):** in git the working tree is ONE — two sessions in the same directory cannot work on two branches "at the same time"; one crushes/pollutes the other's work (conflicts + code loss). The rule: one active dev session per directory at a time; **every worker in its own `git worktree`, created by the spawn tool** (§4.4; by hand: `claude -w P-N`) and removed when the worker is closed after merge; native worktrees live under `.claude/worktrees/` (gitignored, so they never count as uncommitted code on main); checkpoint commit before any branch switch. Scope disjointness is ensured at partitioning time (§3); /new-part runs a parallelism check. The hooks are worktree-aware (rooted at the session's own tree).
 - **Tests:** external-service/LLM calls are **mock-first** (deterministic + free); real calls only via a controlled measurement script.
-- **Environment rules:** project-specific footguns (ports, version pins, "this command runs from this path") — in the spec/memory.
+- **Environment rules:** project-specific footguns (ports, version pins, "this command runs from this path") — in the spec/CLAUDE.md.
 - **The language rule (English docs):** chat language follows the user (any language is fine) — but **ALL documentation** (living-docs, specs, runbooks, commit messages, code comments) is written in **ENGLISH**. Rationale: fewer tokens (Turkish tokenizes measurably more expensively) · the model follows English instructions more reliably · consistent terminology across sessions. The templates are English end to end; the rule is enforced as CLAUDE.md rule 11. *(Since v6 the canonical repo itself — playbook, changelog, README — is English too.)*
 
 ---
@@ -214,17 +228,17 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 
 - **The trigger = quality + a natural boundary, NOT a fixed token count.** A fresh session is higher quality than a compacted one — that is what handover is for. The context budget varies by model (200k vs 1M); **while technical capacity remains, finishing a coherent unit in the same session is allowed** — handing over half-done work usually costs more. At the natural boundary, the suggestion: *"This unit is done / quality is starting to degrade. I suggest a new session; the docs are current. Approve?"*
 - **The safety net (OPTIONAL, not coercive):** the model CANNOT introspect its remaining context — "let the agent notice fullness" is unreliable; reliable tracking lives with the human + the harness. A project that wants it installs the **PreCompact hook** (**at project start, by choice** — not in the default setup): it runs before compaction fires → secures the handover state into the living-docs + notifies the user. It **does not force a handover** — after compaction the same session may continue. Projects without the hook run the same hygiene through human tracking *(the context% in the statusline helps)*.
-- **Handover channels:** worker/ops → a **status report** + current living-docs. The Manager → a **handover prompt** + memory + living-docs.
+- **Handover channels:** worker/ops → a **status report** + current living-docs. The Manager → a **handover prompt** + the CLAUDE.md contract + living-docs.
 - **The handover test (the Manager's symmetric of the Ops test):** if the handover prompt contains information that is not in the living-docs, that is not the prompt's richness — it is **a docs gap**; the doc gets fixed, not the prompt. The handover prompt serves comfort, not truth; the source is always the living-docs.
 - Ideal granularity: one session per part; for a big part, one per sub-step.
 
 ---
 
-## 11. Memory (behavior durability)
+## 11. Behavior durability (role contracts, not memory)
 
-- **`manager-session-pattern`** (memory): how the Manager role works — the kickoff skeleton, ground-truth verification, gate-approval discipline, working agreements, the handover rule. The first Manager session saves it from `memory-seed/` (STARTGUIDE); it carries to later Manager sessions without interruption.
-- **Mechanism note (set expectations right):** memory is **bound to the project directory and is role-blind** — *every* session in the project sees the same index; "the Manager loads it" is not selectivity, it is because the content happens to be Manager behavior. Role selectivity comes from the **kickoff**, not from memory.
-- Memory = the **behavior/preference** information the repo does NOT record. Project state lives in the repo; behavior lives in memory. The two do not overlap.
+- **Role contracts live in CLAUDE.md (since v9):** orchestrated ships a compact **"Manager contract (applies only to the Manager session)"**, solo an **"Orchestrator contract"** — ground-truth verification, gate discipline, kickoffs/workers, handover, retro. Versioned with the repo, shared by every teammate, reloaded after `/clear`/compaction.
+- **Why not auto memory any more:** it is **per-user and machine-local** (a teammate never got the seed) and **role-blind** (every session saw the same index — selectivity came from the kickoff anyway). The `--agent`/`agent` setting was considered and rejected: a non-empty agent prompt **replaces** Claude Code's default system prompt. Role selectivity = the contract's own heading + the kickoff.
+- Auto memory stays what it is good at: a user's personal **preferences**. Project state lives in the repo; behavior lives in CLAUDE.md.
 
 ---
 
@@ -232,8 +246,9 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 
 ```
 .claude/
-├─ settings.json       # permissions: allow (safe read/build/test) · ask (commit/merge/push/checkout…) ·
-│                      #   deny (.env reads, rm -rf, force-push, git clean) + hook registrations
+├─ settings.json       # permissions: allow (safe read/build/test, checkpoint commits) · ask (merge/push/
+│                      #   checkout…, claude --bg/rm/stop) · deny (.env reads, rm -rf, force-push, git clean)
+│                      #   + hook registrations + worktree.baseRef "head" (worktrees see local commits)
 ├─ hooks/
 │  ├─ guard-env.sh     # PreToolUse: blocks the common ACCIDENTAL paths to secret files (.env*, any suffix
 │  │                   #   depth) — direct paths, subcommands, globs, case variants, direct symlinks, Grep
@@ -242,14 +257,16 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 │  ├─ main-guard.sh    # PreToolUse(Bash): blocks CODE commits (untracked count) + compound-commit TOCTOU +
 │  │                   #   cherry-picks + GATE4-unmarked merges on protected branches (VIBE_PROTECTED_BRANCHES)
 │  │                   #   · exact-branch marker · git -C targets the RIGHT repo · docs-only commits free
-│  │                   #   (.claude/ is control-plane, NOT docs) · accident guard — PR merges need branch protection
-│  └─ pre-compact.sh   # (OPTIONAL — by choice at project start) PreCompact: ground snapshot + notification (§10)
+│  │                   #   (.claude/** — markdown included — is control-plane, NOT docs) · fail-closed on parser crash · accident guard — PR merges need branch protection
+│  ├─ pre-compact.sh   # (OPTIONAL — by choice at project start) PreCompact: ground snapshot + notification (§10)
+│  └─ session-start.sh # SessionStart: prints the GROUND header (branch · dirty · last commits · "Now");
+│                      #   worktree-aware, context-only, never blocks
 ├─ agents/             # verifier (GATE 4, §4.3) + design-guardian (design-system conformance, advisory;
 │                      #   mode-managed — absent in --design none) — the MINIMAL set; spec-writer/test-writer
 │                      #   are added only once proven load-bearing (every agent is carried maintenance).
 │                      #   verifier: pin a strong model + grow a project-specific checklist in it (Phase 0)
 └─ commands/           # /gate1 (spec) · /gate2 (plan) · /gate3 (mechanical proof) · /gate4 (review) ·
-                       #   /wip (checkpoint commit) · /new-part · /adapt (Phase 0: derive the project-specific
+                       #   /wip (checkpoint commit) · /new-part (kickoff + worker spawn) · /adapt (Phase 0: derive the project-specific
                        #   configuration; one-shot path when a full analysis is supplied) · /design-kickoff
                        #   (--design first only) — names deliberately avoid Claude Code built-ins
 ```
@@ -261,7 +278,7 @@ Rules kept in memory + CLAUDE.md that keep sessions consistent with each other. 
 | Track | Numbering | Heavy gate | Note |
 |---|---|---|---|
 | **Code** | P1, P2… | GATE 4 (money/auth) | branch + checkpoint commits (§9); NO entry into main without GATE 4 |
-| **Design** | G1, G2… | GATE 3 (visual/browser) | decision-maker: **Claude Design** (MCP; Claude Code **terminal mandatory**) · guardian guardrail; docs/design/ + STATUS |
+| **Design** | G1, G2… | GATE 3 (visual/browser) | decision-maker: **Claude Design** (MCP; `/design consent`) · guardian guardrail; docs/design/ + STATUS |
 | **Ops** | (ad-hoc) | "verify together" | persistent(cache) session; infra-state + runbooks |
 
 **The design-track loop (field-proven; template: `docs/design/README.md`):**
@@ -275,8 +292,8 @@ brief (docs/design/<task>/brief.md) → Claude Design prototype (READ-ONLY on th
 
 **Design modes (v8.3; default flipped to `none` in v8.4)** — chosen at scaffold time (`npx vibe-playbook init <profile> --design <mode>`, stamped in `.claude/.vibe-playbook`; modes differ by whole files only):
 - **`none`** (default) = no design surface (backend/server-only): the scaffold omits `docs/design/`, `.mcp.json`, and the design-guardian agent. Default so the design MCP/trust surface is opt-in, not automatic.
-- **`sync`** = the loop above, alongside development. The scaffold ships a project-scope `.mcp.json` for the canonical `claude-design` MCP (first use = one interactive per-user approval; writes = `/design-login` + per-session `/design-consent`).
-- **`first`** = prototype-before-code (field-distilled): **D0** ~15-line distilled brief per app (never the full strategy doc — context waste + strategy leakage) → **D1** design system (2 art directions → LOCK → publish; the published DS is READ-ONLY canon) → **D2** screen packages (conversion-critical first; ONE consolidated revise per package, PART A–D, ≤2 big turns) → optional adversarial review → **H** export → **🚦 GATE D** (§3). **Birth is manual, life is MCP takeover:** the human pastes the opening prompt and drops the `<app>-mcp.text` pointer; only then does the session do MCP surgery. Prototypes stay cloud-only until H. Multi-app concurrency: ownership partition (`docs/design/<app>/**`) + shared canon through the Manager + design sessions never run git. Normative detail: the scaffold's `docs/design/design-first.md`.
+- **`sync`** = the loop above, alongside development. The scaffold ships a project-scope `.mcp.json` for the canonical `claude-design` MCP (first use = one interactive per-user approval; design-system access = `/design-login`; writes = `/design consent`, an ongoing grant).
+- **`first`** = prototype-before-code (field-distilled): **D0** ~15-line distilled brief per app (never the full strategy doc — context waste + strategy leakage) → **D1** design system (2 art directions → LOCK → publish; the published DS is READ-ONLY canon) → **D2** screen packages (conversion-critical first; ONE consolidated revise per package, PART A–D, ≤2 big turns) → optional adversarial review → **H** export → **🚦 GATE D** (§3). **Birth is human-initiated, life is MCP takeover:** the human starts the project with the opening prompt (a Claude Design chat, or `/design <brief>` where enabled) and drops the `<app>-mcp.text` pointer; only then does the session do MCP surgery. Prototypes stay cloud-only until H. Multi-app concurrency: ownership partition (`docs/design/<app>/**`) + shared canon through the Manager + design sessions never run git. Normative detail: the scaffold's `docs/design/design-first.md`.
 
 ---
 
@@ -290,7 +307,7 @@ brief (docs/design/<task>/brief.md) → Claude Design prototype (READ-ONLY on th
 template/  →  <new-repo>/
 ├─ STARTGUIDE.md          # human: setup steps + the Phase 0 kickoff command + option switches
 ├─ workflow.md            # the playbook's NORMATIVE summary (headed "← playbook vN"; ends with "Project deviations")
-├─ CLAUDE.md              # LEAN: doc map + 11 critical rules (auto-loaded)
+├─ CLAUDE.md              # LEAN: doc map + 11 critical rules + the Manager contract (auto-loaded)
 ├─ progress.md · issues.md            # state boards (start empty; loaded at session start)
 ├─ open-questions.md · NEEDS-FROM-USER.md · .env.example · gitignore (→ .gitignore at init)
 ├─ .mcp.json              # claude-design MCP, project scope (omitted by --design none)
@@ -304,11 +321,10 @@ template/  →  <new-repo>/
 │  └─ design/{README, STATUS, _TEMPLATE-brief, design-system-notes}  # mode-managed: --design none
 │                                          #   omits; --design first adds design-first.md + prompts/
 ├─ .claude/               # the §12 structure — hooks are tested, working files
-├─ _overlays/design-first/  # the --design first file set (the CLI copies it in; never part of a base scaffold)
-└─ memory-seed/manager-session-pattern.md   # the first Manager session saves it to memory (STARTGUIDE §3)
+└─ _overlays/design-first/  # the --design first file set (the CLI copies it in; never part of a base scaffold)
 ```
 
-**Generalization:** fill in everything project-specific (domain, stack, business rules) during Phase 0. **The domain-independent core:** 4 session types · human gates · tracks · the living-docs lifecycle · hand-in-hand · the kickoff skeleton · working agreements · memory.
+**Generalization:** fill in everything project-specific (domain, stack, business rules) during Phase 0. **The domain-independent core:** 4 session types · human gates · tracks · the living-docs lifecycle · hand-in-hand · the kickoff skeleton · working agreements · role contracts.
 
 ---
 
@@ -339,9 +355,9 @@ Phase 0 (plan)──[🚦APPROVAL]──> split Phase N into parts
      ├─ ④ Design (G):      docs/design + guardian; GATE 3 is the heavy one (visual)
      └─ ③ Ops:             infra-state + runbooks; hand-in-hand (artifact↔installation)
      │
-  ① The MANAGER coordinates every track: report→VERIFY(verifier subagent)→refine kickoff→audit gates
+  ① The MANAGER coordinates every track: spawn workers→report→VERIFY(verifier subagent)→refine kickoff→audit gates
      │
-  at the natural boundary → [new-session suggestion 🚦] → handover (docs + memory + prompt) → fresh session
+  at the natural boundary → [new-session suggestion 🚦] → handover (docs + CLAUDE.md contract + prompt) → fresh session
      │              (the PreCompact safety net in the background — §10)
      │
   phase close → RETRO (3 questions) → PROJECT lessons into the workflow · PLAYBOOK lessons into base (§15)
@@ -361,18 +377,18 @@ The same methodology has two profiles; **the DNA is shared** (the living-docs sy
 | Sessions | multi-session (4 roles) | **ONE session + subagents** |
 | Development | interactive dev sessions | the **implementer** subagent |
 | Code reading | the dev session's job | the **scout** subagent (code never enters the main context) |
-| Parallelism | parallel tracks via worktrees | SERIAL — one branch, one writing subagent |
-| Permissions | standard (commit/merge ask first) | **WIDE** (Edit/Write, commit, merge pre-allowed — the control points are the GATES, the invariants live in hooks) |
+| Parallelism | Manager-spawned worker sessions, each in its own worktree | SERIAL — one branch, one writing subagent |
+| Permissions | standard (checkpoint commits free; merge/push/spawn ask first) | **WIDE** (Edit/Write, commit, merge pre-allowed — the control points are the GATES, the invariants live in hooks) |
 | Ceremony | higher (kickoffs/handovers) | low (the `/part` driver; no kickoffs/handovers) |
 | When | big work, parallel tracks, long phases | small/medium work, solo flow, speed |
 
 **Architecture:** the main session = the **orchestrator** (manager + dispatcher). Product code is neither written nor read in the main context — the scout answers, the implementer changes, the verifier verifies; only **compact reports** return to the orchestrator. §4.3's "development is not moved into subagents" boundary is **deliberately inverted** in solo: the user watches the orchestrator's reports instead of the raw dev stream *(the trade: visibility into the work ↓, single-session comfort ↑)*. The gates remain the human's exactly as before; **ground-truth verification applies unchanged** — a subagent report is as fallible as a session report; after every implementer dispatch it is verified with `git log`/`diff --stat`. Hooks fire on subagent tool calls too — the guards hold everywhere.
 
-**Autonomy (human dependency shrinks to the gates):** BETWEEN gates the human is never stopped — permissions are deliberately wide (Edit/Write, `git commit/merge` pre-allowed; push/reset/rebase still ask, destructive ops are denied). This is safe because control does not live in the permission prompt: **gates carry the human approvals, hooks carry the invariants** (main-guard blocks a GATE4-unmarked merge anyway). Dispatches go **in batches**: a small part = the whole approved plan in one dispatch; bigger = packages of 2–4 steps; the implementer makes a checkpoint commit per step — history stays granular, interruptions stay few.
+**Autonomy (human dependency shrinks to the gates):** BETWEEN gates the human is never stopped — permissions are deliberately wide (Edit/Write, `git commit/merge` pre-allowed; push/reset/rebase still ask, destructive ops are denied). This is safe because control does not live in the permission prompt: **gates carry the human approvals, hooks carry the invariants** (main-guard blocks a GATE4-unmarked merge anyway). Dispatches go **in batches**: a small part = the whole approved plan in one dispatch; bigger = packages of 2–4 steps; the implementer makes a checkpoint commit per step — history stays granular, interruptions stay few. **Background implementers (v9):** subagents start in the background by default — the orchestrator **waits for the completion notice** before verifying ground or running a gate (meanwhile only scouts/conversation, never git, gates, or a second writer); GATE 4 CONDITIONAL → the **same** implementer is continued with the fix list (it keeps its part context).
 
 **Context hygiene (the heart of solo) — three layers:**
 1. **Prevention (delegation-first, rule 12):** file contents never enter the main context → the context fills slowly by nature; the main context carries decisions + summaries.
-2. **Safe reset (`/tidy`, rule 13):** after every merge/ops block — the docs are synced to the ground, rotation is done, "decisions that live only in chat" are swept into the docs → the reset is offered: **`/clear` at a part boundary (RECOMMENDED — the solo equivalent of orchestrated's fresh session)**, `/compact` mid-part. **The honest limit:** the model CANNOT wipe its own context (`/clear`/`/compact` are user commands) — what it can do: keep the context from filling, make the reset zero-risk, and offer it as one keystroke. Quality order: `/clear` at a boundary > `/compact` > unplanned auto-compaction (even that is safe — snapshot + docs discipline). **The restart test** (the solo counterpart of the handover test): after `/clear`, a fresh session must continue from CLAUDE.md + living-docs + memory alone. *(Memory survives `/clear` → behavior in memory, state in docs, cleaning is cheap. So solo's "one session" means one window/flow — NOT one lifelong context; orchestrated's fresh-session hygiene lives on in solo as `/clear` at part boundaries.)*
+2. **Safe reset (`/tidy`, rule 13):** after every merge/ops block — the docs are synced to the ground, rotation is done, "decisions that live only in chat" are swept into the docs → the reset is offered: **`/clear` at a part boundary (RECOMMENDED — the solo equivalent of orchestrated's fresh session)**, `/compact` mid-part. **The honest limit:** the model CANNOT wipe its own context (`/clear`/`/compact` are user commands) — what it can do: keep the context from filling, make the reset zero-risk, and offer it as one keystroke. Quality order: `/clear` at a boundary > `/compact` > unplanned auto-compaction (even that is safe — snapshot + docs discipline). **The restart test** (the solo counterpart of the handover test): after `/clear`, a fresh session must continue from CLAUDE.md + living-docs alone (the SessionStart hook prints the ground header). *(CLAUDE.md reloads after `/clear` → behavior in its Orchestrator contract, state in docs, cleaning is cheap. So solo's "one session" means one window/flow — NOT one lifelong context; orchestrated's fresh-session hygiene lives on in solo as `/clear` at part boundaries.)*
 3. **The safety net (PreCompact default-ON):** a solo session lives long; compaction WILL come — the hook that is optional in orchestrated is the default in solo.
 
 **The audience line, honestly drawn:** solo removes the *mechanical* developer dependencies (branches, commits, merges, worktrees — the agent runs them; GATE 4 is presented plain-language-first with a technical appendix). It does NOT remove the *judgment* dependency: the gates still ask a human "is this what I wanted? does it work when I try it?" — that judgment is the safety backbone, and on money/auth surfaces it matters most. A vibe coder supplies judgment; a developer can additionally read the appendix.
